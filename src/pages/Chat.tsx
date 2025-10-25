@@ -177,6 +177,9 @@ const Chat = () => {
             <h1 className="text-2xl font-bold text-primary">FarmerChain</h1>
           </div>
           <div className="flex gap-2">
+            <Button variant="outline" onClick={() => navigate("/dashboard")}>
+              Dashboard
+            </Button>
             <Button variant="outline" onClick={() => navigate("/profile")}>
               Profile
             </Button>
