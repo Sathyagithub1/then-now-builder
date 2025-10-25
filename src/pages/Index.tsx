@@ -56,7 +56,7 @@ const Index = () => {
         </div>
 
         <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/services")}>
             <CardHeader>
               <CardTitle>Browse Services</CardTitle>
               <CardDescription>Find agricultural services near you</CardDescription>
@@ -66,7 +66,7 @@ const Index = () => {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/quotes")}>
             <CardHeader>
               <CardTitle>My Quotes</CardTitle>
               <CardDescription>Manage your service requests</CardDescription>
