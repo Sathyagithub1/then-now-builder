@@ -89,13 +89,13 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-secondary p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
             <img src={logoImage} alt="FarmerChain Logo" className="h-16 w-auto" />
           </div>
-          <CardTitle className="text-3xl font-bold text-green-700">FarmerChain</CardTitle>
+          <CardTitle className="text-3xl font-bold text-primary">FarmerChain</CardTitle>
           <CardDescription>Connect farmers and agricultural services</CardDescription>
         </CardHeader>
         <CardContent>

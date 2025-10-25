@@ -38,12 +38,12 @@ const Index = () => {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
-      <header className="bg-white shadow-sm">
+    <div className="min-h-screen bg-gradient-to-br from-background to-secondary">
+      <header className="bg-card shadow-sm border-b border-border">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
             <img src={logoImage} alt="FarmerChain Logo" className="h-10 w-auto" />
-            <h1 className="text-2xl font-bold text-green-700">FarmerChain</h1>
+            <h1 className="text-2xl font-bold text-primary">FarmerChain</h1>
           </div>
           <Button onClick={handleSignOut} variant="outline">Sign Out</Button>
         </div>
