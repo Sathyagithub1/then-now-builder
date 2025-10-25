@@ -52,7 +52,14 @@ const Index = () => {
               <Button variant="ghost" size="sm" onClick={() => navigate("/chat")}>Messages</Button>
             </nav>
           </div>
-          <Button onClick={handleSignOut} variant="outline">Sign Out</Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => navigate("/profile")}>
+              Profile
+            </Button>
+            <Button variant="outline" onClick={handleSignOut}>
+              Sign Out
+            </Button>
+          </div>
         </div>
       </header>
 

@@ -176,7 +176,14 @@ const Chat = () => {
             <img src={logoImage} alt="Logo" className="h-8 w-auto" style={{ imageRendering: 'crisp-edges' }} />
             <h1 className="text-2xl font-bold text-primary">FarmerChain</h1>
           </div>
-          <Button onClick={handleSignOut} variant="outline">Sign Out</Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => navigate("/profile")}>
+              Profile
+            </Button>
+            <Button variant="outline" onClick={handleSignOut}>
+              Sign Out
+            </Button>
+          </div>
         </div>
       </header>
 
