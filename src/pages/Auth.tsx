@@ -68,21 +68,8 @@ const Auth = () => {
     if (error) {
       toast.error(error.message);
     } else if (data.user) {
-      // Create profile - id will be set by the database trigger
-      const { error: profileError } = await supabase.from("profiles").insert({
-        role,
-        full_name: fullName,
-        mobile_number: mobileNumber,
-        state,
-        district,
-      } as any);
-
-      if (profileError) {
-        toast.error("Error creating profile");
-      } else {
-        toast.success("Account created successfully!");
-        navigate("/");
-      }
+      toast.success("Account created successfully!");
+      navigate("/");
     }
     setLoading(false);
   };

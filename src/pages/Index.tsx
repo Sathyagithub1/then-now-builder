@@ -41,9 +41,16 @@ const Index = () => {
     <div className="min-h-screen bg-gradient-to-br from-background to-secondary">
       <header className="bg-card shadow-sm border-b border-border">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <img src={logoImage} alt="FarmerChain Logo" className="h-8 w-auto" style={{ imageRendering: 'crisp-edges' }} />
-            <h1 className="text-2xl font-bold text-primary">FarmerChain</h1>
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate("/")}>
+              <img src={logoImage} alt="Logo" className="h-8 w-auto" style={{ imageRendering: 'crisp-edges' }} />
+              <h1 className="text-2xl font-bold text-primary">FarmerChain</h1>
+            </div>
+            <nav className="hidden md:flex gap-4">
+              <Button variant="ghost" size="sm" onClick={() => navigate("/workers")}>Find Workers</Button>
+              <Button variant="ghost" size="sm" onClick={() => navigate("/orders")}>Orders</Button>
+              <Button variant="ghost" size="sm" onClick={() => navigate("/chat")}>Messages</Button>
+            </nav>
           </div>
           <Button onClick={handleSignOut} variant="outline">Sign Out</Button>
         </div>
