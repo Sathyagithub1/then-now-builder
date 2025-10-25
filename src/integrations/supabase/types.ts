@@ -14,6 +14,312 @@ export type Database = {
   }
   public: {
     Tables: {
+      chat_messages: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_read: boolean | null
+          message: string
+          order_id: string | null
+          receiver_id: string
+          sender_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message: string
+          order_id?: string | null
+          receiver_id: string
+          sender_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          order_id?: string | null
+          receiver_id?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_messages_receiver_id_fkey"
+            columns: ["receiver_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      commission_history: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          effective_from: string | null
+          id: string
+          percentage: number
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          effective_from?: string | null
+          id?: string
+          percentage: number
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          effective_from?: string | null
+          id?: string
+          percentage?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commission_history_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_payments: {
+        Row: {
+          amount: number
+          commission_amount: number | null
+          created_at: string | null
+          id: string
+          order_id: string
+          paid_at: string | null
+          payer_id: string
+          payment_method: string
+          razorpay_order_id: string | null
+          razorpay_payment_id: string | null
+          receiver_id: string
+          status: string | null
+          transaction_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          commission_amount?: number | null
+          created_at?: string | null
+          id?: string
+          order_id: string
+          paid_at?: string | null
+          payer_id: string
+          payment_method: string
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          receiver_id: string
+          status?: string | null
+          transaction_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          commission_amount?: number | null
+          created_at?: string | null
+          id?: string
+          order_id?: string
+          paid_at?: string | null
+          payer_id?: string
+          payment_method?: string
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          receiver_id?: string
+          status?: string | null
+          transaction_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_payments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_payments_payer_id_fkey"
+            columns: ["payer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_payments_receiver_id_fkey"
+            columns: ["receiver_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_reviews: {
+        Row: {
+          comment: string | null
+          created_at: string | null
+          id: string
+          order_id: string
+          rating: number
+          reviewee_id: string
+          reviewer_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string | null
+          id?: string
+          order_id: string
+          rating: number
+          reviewee_id: string
+          reviewer_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string | null
+          id?: string
+          order_id?: string
+          rating?: number
+          reviewee_id?: string
+          reviewer_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_reviews_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_reviews_reviewee_id_fkey"
+            columns: ["reviewee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_reviews_reviewer_id_fkey"
+            columns: ["reviewer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          agreed_amount: number
+          cancellation_reason: string | null
+          commission_amount: number | null
+          commission_percentage: number | null
+          created_at: string | null
+          description: string
+          dispute_reason: string | null
+          end_date: string | null
+          estimated_hours: number | null
+          farmer_id: string
+          id: string
+          location_address: string
+          location_lat: number | null
+          location_lng: number | null
+          notes: string | null
+          start_date: string | null
+          status: Database["public"]["Enums"]["order_status"] | null
+          title: string
+          updated_at: string | null
+          work_type_id: string | null
+          worker_id: string
+        }
+        Insert: {
+          agreed_amount: number
+          cancellation_reason?: string | null
+          commission_amount?: number | null
+          commission_percentage?: number | null
+          created_at?: string | null
+          description: string
+          dispute_reason?: string | null
+          end_date?: string | null
+          estimated_hours?: number | null
+          farmer_id: string
+          id?: string
+          location_address: string
+          location_lat?: number | null
+          location_lng?: number | null
+          notes?: string | null
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["order_status"] | null
+          title: string
+          updated_at?: string | null
+          work_type_id?: string | null
+          worker_id: string
+        }
+        Update: {
+          agreed_amount?: number
+          cancellation_reason?: string | null
+          commission_amount?: number | null
+          commission_percentage?: number | null
+          created_at?: string | null
+          description?: string
+          dispute_reason?: string | null
+          end_date?: string | null
+          estimated_hours?: number | null
+          farmer_id?: string
+          id?: string
+          location_address?: string
+          location_lat?: number | null
+          location_lng?: number | null
+          notes?: string | null
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["order_status"] | null
+          title?: string
+          updated_at?: string | null
+          work_type_id?: string | null
+          worker_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_farmer_id_fkey"
+            columns: ["farmer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_work_type_id_fkey"
+            columns: ["work_type_id"]
+            isOneToOne: false
+            referencedRelation: "work_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_worker_id_fkey"
+            columns: ["worker_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payments: {
         Row: {
           amount: number
@@ -78,6 +384,9 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          bank_account_holder_name: string | null
+          bank_account_number: string | null
+          bank_ifsc_code: string | null
           bio: string | null
           country: string | null
           created_at: string | null
@@ -86,15 +395,22 @@ export type Database = {
           gov_id_number: string | null
           gov_id_type: Database["public"]["Enums"]["gov_id_type"] | null
           id: string
+          is_active: boolean | null
+          kyc_verified: boolean | null
           latitude: number | null
           longitude: number | null
           mobile_number: string
+          role: Database["public"]["Enums"]["user_role"] | null
           state: string
           updated_at: string | null
-          user_type: Database["public"]["Enums"]["user_type"]
+          upi_id: string | null
+          user_type: string
         }
         Insert: {
           avatar_url?: string | null
+          bank_account_holder_name?: string | null
+          bank_account_number?: string | null
+          bank_ifsc_code?: string | null
           bio?: string | null
           country?: string | null
           created_at?: string | null
@@ -103,15 +419,22 @@ export type Database = {
           gov_id_number?: string | null
           gov_id_type?: Database["public"]["Enums"]["gov_id_type"] | null
           id: string
+          is_active?: boolean | null
+          kyc_verified?: boolean | null
           latitude?: number | null
           longitude?: number | null
           mobile_number: string
+          role?: Database["public"]["Enums"]["user_role"] | null
           state: string
           updated_at?: string | null
-          user_type: Database["public"]["Enums"]["user_type"]
+          upi_id?: string | null
+          user_type: string
         }
         Update: {
           avatar_url?: string | null
+          bank_account_holder_name?: string | null
+          bank_account_number?: string | null
+          bank_ifsc_code?: string | null
           bio?: string | null
           country?: string | null
           created_at?: string | null
@@ -120,12 +443,16 @@ export type Database = {
           gov_id_number?: string | null
           gov_id_type?: Database["public"]["Enums"]["gov_id_type"] | null
           id?: string
+          is_active?: boolean | null
+          kyc_verified?: boolean | null
           latitude?: number | null
           longitude?: number | null
           mobile_number?: string
+          role?: Database["public"]["Enums"]["user_role"] | null
           state?: string
           updated_at?: string | null
-          user_type?: Database["public"]["Enums"]["user_type"]
+          upi_id?: string | null
+          user_type?: string
         }
         Relationships: []
       }
@@ -300,6 +627,36 @@ export type Database = {
           },
         ]
       }
+      work_types: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -309,6 +666,15 @@ export type Database = {
     }
     Enums: {
       gov_id_type: "aadhar_card" | "pan_card" | "voter_id" | "driving_license"
+      order_status:
+        | "new"
+        | "ongoing"
+        | "completed"
+        | "partially_accepted"
+        | "agreed_partially"
+        | "accepted_finished"
+        | "canceled"
+        | "dispute"
       payment_status:
         | "pending"
         | "processing"
@@ -330,7 +696,16 @@ export type Database = {
         | "equipment_rental"
         | "consulting"
         | "other"
+      user_role: "super_admin" | "admin" | "farmer" | "farm_worker"
       user_type: "employee" | "employer"
+      work_category:
+        | "harvesting"
+        | "plowing"
+        | "irrigation"
+        | "pesticide_spray"
+        | "planting"
+        | "weeding"
+        | "other"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -459,6 +834,16 @@ export const Constants = {
   public: {
     Enums: {
       gov_id_type: ["aadhar_card", "pan_card", "voter_id", "driving_license"],
+      order_status: [
+        "new",
+        "ongoing",
+        "completed",
+        "partially_accepted",
+        "agreed_partially",
+        "accepted_finished",
+        "canceled",
+        "dispute",
+      ],
       payment_status: [
         "pending",
         "processing",
@@ -483,7 +868,17 @@ export const Constants = {
         "consulting",
         "other",
       ],
+      user_role: ["super_admin", "admin", "farmer", "farm_worker"],
       user_type: ["employee", "employer"],
+      work_category: [
+        "harvesting",
+        "plowing",
+        "irrigation",
+        "pesticide_spray",
+        "planting",
+        "weeding",
+        "other",
+      ],
     },
   },
 } as const
