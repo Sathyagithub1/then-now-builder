@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import logoImage from "@/assets/farmerchain-logo.png";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -91,7 +92,10 @@ const Auth = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-3xl font-bold text-green-700">🌾 FarmerChain</CardTitle>
+          <div className="flex justify-center mb-4">
+            <img src={logoImage} alt="FarmerChain Logo" className="h-16 w-auto" />
+          </div>
+          <CardTitle className="text-3xl font-bold text-green-700">FarmerChain</CardTitle>
           <CardDescription>Connect farmers and agricultural services</CardDescription>
         </CardHeader>
         <CardContent>

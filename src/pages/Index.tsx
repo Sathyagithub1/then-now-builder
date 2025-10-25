@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
+import logoImage from "@/assets/farmerchain-logo.png";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -40,7 +41,10 @@ const Index = () => {
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
       <header className="bg-white shadow-sm">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-green-700">🌾 FarmerChain</h1>
+          <div className="flex items-center gap-3">
+            <img src={logoImage} alt="FarmerChain Logo" className="h-10 w-auto" />
+            <h1 className="text-2xl font-bold text-green-700">FarmerChain</h1>
+          </div>
           <Button onClick={handleSignOut} variant="outline">Sign Out</Button>
         </div>
       </header>
