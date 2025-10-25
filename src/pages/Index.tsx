@@ -53,6 +53,9 @@ const Index = () => {
             </nav>
           </div>
           <div className="flex gap-2">
+            <Button variant="outline" onClick={() => navigate("/dashboard")}>
+              Dashboard
+            </Button>
             <Button variant="outline" onClick={() => navigate("/profile")}>
               Profile
             </Button>
