@@ -19,7 +19,7 @@ const Auth = () => {
   // Form state
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [userType, setUserType] = useState<"employee" | "employer">("employee");
+  const [role, setRole] = useState<"farmer" | "farm_worker">("farmer");
   const [fullName, setFullName] = useState("");
   const [mobileNumber, setMobileNumber] = useState("");
   const [state, setState] = useState("");
@@ -56,7 +56,7 @@ const Auth = () => {
       options: {
         emailRedirectTo: `${window.location.origin}/`,
         data: {
-          user_type: userType,
+          role,
           full_name: fullName,
           mobile_number: mobileNumber,
           state,
@@ -68,15 +68,14 @@ const Auth = () => {
     if (error) {
       toast.error(error.message);
     } else if (data.user) {
-      // Create profile
+      // Create profile - id will be set by the database trigger
       const { error: profileError } = await supabase.from("profiles").insert({
-        id: data.user.id,
-        user_type: userType,
+        role,
         full_name: fullName,
         mobile_number: mobileNumber,
         state,
         district,
-      });
+      } as any);
 
       if (profileError) {
         toast.error("Error creating profile");
@@ -123,15 +122,15 @@ const Auth = () => {
             <TabsContent value="signup">
               <form onSubmit={handleSignUp} className="space-y-4">
                 <div>
-                  <Label>User Type</Label>
-                  <RadioGroup value={userType} onValueChange={(v: any) => setUserType(v)} className="flex gap-4">
+                  <Label>I am a</Label>
+                  <RadioGroup value={role} onValueChange={(v: any) => setRole(v)} className="flex gap-4">
                     <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="employee" id="employee" />
-                      <Label htmlFor="employee">Employee</Label>
+                      <RadioGroupItem value="farmer" id="farmer" />
+                      <Label htmlFor="farmer">Farmer (Hire Workers)</Label>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="employer" id="employer" />
-                      <Label htmlFor="employer">Employer</Label>
+                      <RadioGroupItem value="farm_worker" id="farm_worker" />
+                      <Label htmlFor="farm_worker">Farm Worker (Find Jobs)</Label>
                     </div>
                   </RadioGroup>
                 </div>

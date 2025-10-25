@@ -55,30 +55,52 @@ const Index = () => {
           <p className="text-xl text-muted-foreground">Connecting farmers and agricultural services</p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/services")}>
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/workers")}>
             <CardHeader>
-              <CardTitle>Browse Services</CardTitle>
-              <CardDescription>Find agricultural services near you</CardDescription>
+              <CardTitle className="flex items-center gap-2">
+                <span className="text-2xl">👥</span>
+                Find Workers
+              </CardTitle>
+              <CardDescription>Browse farm workers in your area</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button className="w-full">Explore Services</Button>
+              <Button className="w-full">Search Workers</Button>
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/quotes")}>
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/orders")}>
             <CardHeader>
-              <CardTitle>My Quotes</CardTitle>
-              <CardDescription>Manage your service requests</CardDescription>
+              <CardTitle className="flex items-center gap-2">
+                <span className="text-2xl">📋</span>
+                My Orders
+              </CardTitle>
+              <CardDescription>Manage your work orders</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button className="w-full" variant="secondary">View Quotes</Button>
+              <Button className="w-full" variant="secondary">View Orders</Button>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/chat")}>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <span className="text-2xl">💬</span>
+                Messages
+              </CardTitle>
+              <CardDescription>Chat with workers and farmers</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button className="w-full" variant="secondary">Open Chat</Button>
             </CardContent>
           </Card>
 
           <Card className="hover:shadow-lg transition-shadow cursor-pointer">
             <CardHeader>
-              <CardTitle>Reviews</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <span className="text-2xl">⭐</span>
+                Reviews
+              </CardTitle>
               <CardDescription>Rate and review services</CardDescription>
             </CardHeader>
             <CardContent>
