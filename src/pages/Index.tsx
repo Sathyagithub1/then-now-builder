@@ -42,7 +42,7 @@ const Index = () => {
       <header className="bg-card shadow-sm border-b border-border">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <img src={logoImage} alt="FarmerChain Logo" className="h-10 w-auto" />
+            <img src={logoImage} alt="FarmerChain Logo" className="h-8 w-auto" style={{ imageRendering: 'crisp-edges' }} />
             <h1 className="text-2xl font-bold text-primary">FarmerChain</h1>
           </div>
           <Button onClick={handleSignOut} variant="outline">Sign Out</Button>

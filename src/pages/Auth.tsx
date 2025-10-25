@@ -93,7 +93,7 @@ const Auth = () => {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <img src={logoImage} alt="FarmerChain Logo" className="h-16 w-auto" />
+            <img src={logoImage} alt="FarmerChain Logo" className="h-12 w-auto" style={{ imageRendering: 'crisp-edges' }} />
           </div>
           <CardTitle className="text-3xl font-bold text-primary">FarmerChain</CardTitle>
           <CardDescription>Connect farmers and agricultural services</CardDescription>
