@@ -98,6 +98,33 @@ export type Database = {
           },
         ]
       }
+      job_alerts: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          search_criteria: Json
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          search_criteria: Json
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          search_criteria?: Json
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       order_payments: {
         Row: {
           amount: number
@@ -383,14 +410,19 @@ export type Database = {
       }
       profiles: {
         Row: {
+          address: string | null
           avatar_url: string | null
+          average_rating: number | null
           bank_account_holder_name: string | null
           bank_account_number: string | null
           bank_ifsc_code: string | null
           bio: string | null
+          coordinates_lat: number | null
+          coordinates_lng: number | null
           country: string | null
           created_at: string | null
           district: string
+          election_card_number: string | null
           email: string | null
           full_name: string
           gov_id_number: string | null
@@ -401,21 +433,30 @@ export type Database = {
           latitude: number | null
           longitude: number | null
           mobile_number: string
+          passport_number: string | null
+          preferred_language: string | null
+          ration_card_number: string | null
           role: Database["public"]["Enums"]["user_role"] | null
           state: string
+          total_ratings: number | null
           updated_at: string | null
           upi_id: string | null
           user_type: string
         }
         Insert: {
+          address?: string | null
           avatar_url?: string | null
+          average_rating?: number | null
           bank_account_holder_name?: string | null
           bank_account_number?: string | null
           bank_ifsc_code?: string | null
           bio?: string | null
+          coordinates_lat?: number | null
+          coordinates_lng?: number | null
           country?: string | null
           created_at?: string | null
           district: string
+          election_card_number?: string | null
           email?: string | null
           full_name: string
           gov_id_number?: string | null
@@ -426,21 +467,30 @@ export type Database = {
           latitude?: number | null
           longitude?: number | null
           mobile_number: string
+          passport_number?: string | null
+          preferred_language?: string | null
+          ration_card_number?: string | null
           role?: Database["public"]["Enums"]["user_role"] | null
           state: string
+          total_ratings?: number | null
           updated_at?: string | null
           upi_id?: string | null
           user_type: string
         }
         Update: {
+          address?: string | null
           avatar_url?: string | null
+          average_rating?: number | null
           bank_account_holder_name?: string | null
           bank_account_number?: string | null
           bank_ifsc_code?: string | null
           bio?: string | null
+          coordinates_lat?: number | null
+          coordinates_lng?: number | null
           country?: string | null
           created_at?: string | null
           district?: string
+          election_card_number?: string | null
           email?: string | null
           full_name?: string
           gov_id_number?: string | null
@@ -451,8 +501,12 @@ export type Database = {
           latitude?: number | null
           longitude?: number | null
           mobile_number?: string
+          passport_number?: string | null
+          preferred_language?: string | null
+          ration_card_number?: string | null
           role?: Database["public"]["Enums"]["user_role"] | null
           state?: string
+          total_ratings?: number | null
           updated_at?: string | null
           upi_id?: string | null
           user_type?: string
@@ -568,6 +622,66 @@ export type Database = {
           },
         ]
       }
+      saved_searches: {
+        Row: {
+          created_at: string | null
+          id: string
+          location_district: string | null
+          location_state: string | null
+          radius_km: number | null
+          search_name: string
+          user_id: string
+          work_crop_type_ids: string[] | null
+          work_type_ids: string[] | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          location_district?: string | null
+          location_state?: string | null
+          radius_km?: number | null
+          search_name: string
+          user_id: string
+          work_crop_type_ids?: string[] | null
+          work_type_ids?: string[] | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          location_district?: string | null
+          location_state?: string | null
+          radius_km?: number | null
+          search_name?: string
+          user_id?: string
+          work_crop_type_ids?: string[] | null
+          work_type_ids?: string[] | null
+        }
+        Relationships: []
+      }
+      search_history: {
+        Row: {
+          created_at: string | null
+          id: string
+          search_filters: Json | null
+          search_query: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          search_filters?: Json | null
+          search_query: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          search_filters?: Json | null
+          search_query?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       services: {
         Row: {
           category: Database["public"]["Enums"]["service_category"]
@@ -630,6 +744,36 @@ export type Database = {
           },
         ]
       }
+      translations: {
+        Row: {
+          context: string | null
+          created_at: string | null
+          id: string
+          key: string
+          language_code: string
+          updated_at: string | null
+          value: string
+        }
+        Insert: {
+          context?: string | null
+          created_at?: string | null
+          id?: string
+          key: string
+          language_code: string
+          updated_at?: string | null
+          value: string
+        }
+        Update: {
+          context?: string | null
+          created_at?: string | null
+          id?: string
+          key?: string
+          language_code?: string
+          updated_at?: string | null
+          value?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -651,7 +795,46 @@ export type Database = {
         }
         Relationships: []
       }
-      work_types: {
+      user_work_types: {
+        Row: {
+          created_at: string | null
+          id: string
+          user_id: string
+          work_crop_type_id: string
+          work_type_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          user_id: string
+          work_crop_type_id: string
+          work_type_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          user_id?: string
+          work_crop_type_id?: string
+          work_type_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_work_types_work_crop_type_id_fkey"
+            columns: ["work_crop_type_id"]
+            isOneToOne: false
+            referencedRelation: "work_crop_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_work_types_work_type_id_fkey"
+            columns: ["work_type_id"]
+            isOneToOne: false
+            referencedRelation: "work_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_crop_types: {
         Row: {
           created_at: string | null
           description: string | null
@@ -678,6 +861,77 @@ export type Database = {
           is_active?: boolean | null
           name?: string
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      work_types: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          updated_at: string | null
+          work_crop_type_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          updated_at?: string | null
+          work_crop_type_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          updated_at?: string | null
+          work_crop_type_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_types_work_crop_type_id_fkey"
+            columns: ["work_crop_type_id"]
+            isOneToOne: false
+            referencedRelation: "work_crop_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      worker_availability: {
+        Row: {
+          available_from: string
+          available_to: string
+          created_at: string | null
+          id: string
+          notes: string | null
+          updated_at: string | null
+          worker_id: string
+        }
+        Insert: {
+          available_from: string
+          available_to: string
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          updated_at?: string | null
+          worker_id: string
+        }
+        Update: {
+          available_from?: string
+          available_to?: string
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          updated_at?: string | null
+          worker_id?: string
         }
         Relationships: []
       }

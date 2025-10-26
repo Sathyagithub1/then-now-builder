@@ -9,6 +9,7 @@ import logoImage from "@/assets/farmerchain-logo.png";
 const Index = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -16,6 +17,7 @@ const Index = () => {
         navigate("/auth");
       } else {
         setUser(session.user);
+        loadProfile(session.user.id);
       }
     });
 
@@ -24,11 +26,22 @@ const Index = () => {
         navigate("/auth");
       } else {
         setUser(session.user);
+        loadProfile(session.user.id);
       }
     });
 
     return () => subscription.unsubscribe();
   }, [navigate]);
+
+  const loadProfile = async (userId: string) => {
+    const { data } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
+      .single();
+    
+    if (data) setProfile(data);
+  };
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -47,9 +60,13 @@ const Index = () => {
               <h1 className="text-2xl font-bold text-primary">FarmerChain</h1>
             </div>
             <nav className="hidden md:flex gap-4">
-              <Button variant="ghost" size="sm" onClick={() => navigate("/workers")}>Find Workers</Button>
+              <Button variant="ghost" size="sm" onClick={() => navigate("/search")}>Advanced Search</Button>
+              <Button variant="ghost" size="sm" onClick={() => navigate("/saved-searches")}>Saved Searches</Button>
               <Button variant="ghost" size="sm" onClick={() => navigate("/orders")}>Orders</Button>
               <Button variant="ghost" size="sm" onClick={() => navigate("/chat")}>Messages</Button>
+              {profile?.role === "farm_worker" && (
+                <Button variant="ghost" size="sm" onClick={() => navigate("/availability")}>My Availability</Button>
+              )}
             </nav>
           </div>
           <div className="flex gap-2">
@@ -73,16 +90,29 @@ const Index = () => {
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/workers")}>
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/search")}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <span className="text-2xl">👥</span>
-                Find Workers
+                <span className="text-2xl">🔍</span>
+                Advanced Search
               </CardTitle>
-              <CardDescription>Browse farm workers in your area</CardDescription>
+              <CardDescription>Find workers with filters</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button className="w-full">Search Workers</Button>
+              <Button className="w-full">Search Now</Button>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/saved-searches")}>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <span className="text-2xl">💾</span>
+                Saved Searches
+              </CardTitle>
+              <CardDescription>View your saved searches</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button className="w-full" variant="secondary">View Saved</Button>
             </CardContent>
           </Card>
 
@@ -112,16 +142,31 @@ const Index = () => {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+          {profile?.role === "farm_worker" && (
+            <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/availability")}>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <span className="text-2xl">📅</span>
+                  My Availability
+                </CardTitle>
+                <CardDescription>Manage when you're available</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button className="w-full" variant="secondary">Set Availability</Button>
+              </CardContent>
+            </Card>
+          )}
+
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/admin-panel")}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <span className="text-2xl">⭐</span>
-                Reviews
+                <span className="text-2xl">⚙️</span>
+                Admin Panel
               </CardTitle>
-              <CardDescription>Rate and review services</CardDescription>
+              <CardDescription>Manage work types (Admin)</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button className="w-full" variant="secondary">My Reviews</Button>
+              <Button className="w-full" variant="outline">Admin Tools</Button>
             </CardContent>
           </Card>
         </div>

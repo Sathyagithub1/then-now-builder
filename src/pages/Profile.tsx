@@ -64,6 +64,13 @@ export default function Profile() {
           district: profile.district,
           bio: profile.bio,
           avatar_url: profile.avatar_url,
+          address: profile.address,
+          coordinates_lat: profile.coordinates_lat,
+          coordinates_lng: profile.coordinates_lng,
+          preferred_language: profile.preferred_language,
+          passport_number: profile.passport_number,
+          election_card_number: profile.election_card_number,
+          ration_card_number: profile.ration_card_number,
         })
         .eq("id", session.user.id);
 
@@ -193,9 +200,118 @@ export default function Profile() {
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="address">Address</Label>
+              <Textarea
+                id="address"
+                value={profile?.address || ""}
+                onChange={(e) => setProfile({ ...profile, address: e.target.value })}
+                placeholder="Your full address..."
+                rows={3}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="coordinates_lat">Latitude (Optional)</Label>
+                <Input
+                  id="coordinates_lat"
+                  type="number"
+                  step="0.000001"
+                  value={profile?.coordinates_lat || ""}
+                  onChange={(e) => setProfile({ ...profile, coordinates_lat: parseFloat(e.target.value) || null })}
+                  placeholder="13.0827"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="coordinates_lng">Longitude (Optional)</Label>
+                <Input
+                  id="coordinates_lng"
+                  type="number"
+                  step="0.000001"
+                  value={profile?.coordinates_lng || ""}
+                  onChange={(e) => setProfile({ ...profile, coordinates_lng: parseFloat(e.target.value) || null })}
+                  placeholder="80.2707"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="preferred_language">Preferred Language</Label>
+              <select
+                id="preferred_language"
+                className="w-full p-2 border rounded"
+                value={profile?.preferred_language || "en"}
+                onChange={(e) => setProfile({ ...profile, preferred_language: e.target.value })}
+              >
+                <option value="en">English</option>
+                <option value="hi">Hindi</option>
+                <option value="ta">Tamil</option>
+                <option value="te">Telugu</option>
+                <option value="kn">Kannada</option>
+                <option value="ml">Malayalam</option>
+                <option value="bn">Bengali</option>
+                <option value="mr">Marathi</option>
+              </select>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="font-semibold">Additional ID Proofs (Optional)</h3>
+              <div className="space-y-2">
+                <Label htmlFor="passport_number">Passport Number</Label>
+                <Input
+                  id="passport_number"
+                  value={profile?.passport_number || ""}
+                  onChange={(e) => setProfile({ ...profile, passport_number: e.target.value })}
+                  placeholder="A1234567"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="election_card_number">Election Card Number</Label>
+                <Input
+                  id="election_card_number"
+                  value={profile?.election_card_number || ""}
+                  onChange={(e) => setProfile({ ...profile, election_card_number: e.target.value })}
+                  placeholder="ABC1234567"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="ration_card_number">Ration Card Number</Label>
+                <Input
+                  id="ration_card_number"
+                  value={profile?.ration_card_number || ""}
+                  onChange={(e) => setProfile({ ...profile, ration_card_number: e.target.value })}
+                  placeholder="123456789012"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
               <Label>Role</Label>
               <Input value={profile?.role || ""} disabled />
             </div>
+
+            {profile?.role === "farm_worker" && (
+              <div>
+                <Button onClick={() => navigate("/my-work-types")} variant="outline" className="w-full">
+                  Manage My Work Types & Skills
+                </Button>
+              </div>
+            )}
+
+            {profile?.average_rating > 0 && (
+              <div className="space-y-2">
+                <Label>Your Rating</Label>
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl">⭐</span>
+                  <span className="text-xl font-semibold">
+                    {profile.average_rating.toFixed(1)}
+                  </span>
+                  <span className="text-muted-foreground">
+                    ({profile.total_ratings} review{profile.total_ratings !== 1 ? 's' : ''})
+                  </span>
+                </div>
+              </div>
+            )}
 
             <Button onClick={handleSave} disabled={saving} className="w-full">
               <Save className="h-4 w-4 mr-2" />
