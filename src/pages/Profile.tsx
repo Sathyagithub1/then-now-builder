@@ -59,6 +59,7 @@ export default function Profile() {
         .update({
           full_name: profile.full_name,
           mobile_number: profile.mobile_number,
+          email: profile.email,
           state: profile.state,
           district: profile.district,
           bio: profile.bio,

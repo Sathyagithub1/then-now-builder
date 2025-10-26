@@ -391,6 +391,7 @@ export type Database = {
           country: string | null
           created_at: string | null
           district: string
+          email: string | null
           full_name: string
           gov_id_number: string | null
           gov_id_type: Database["public"]["Enums"]["gov_id_type"] | null
@@ -415,6 +416,7 @@ export type Database = {
           country?: string | null
           created_at?: string | null
           district: string
+          email?: string | null
           full_name: string
           gov_id_number?: string | null
           gov_id_type?: Database["public"]["Enums"]["gov_id_type"] | null
@@ -439,6 +441,7 @@ export type Database = {
           country?: string | null
           created_at?: string | null
           district?: string
+          email?: string | null
           full_name?: string
           gov_id_number?: string | null
           gov_id_type?: Database["public"]["Enums"]["gov_id_type"] | null
