@@ -35,7 +35,13 @@ const Auth = () => {
     e.preventDefault();
     setLoading(true);
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    // Generate email from mobile number for authentication
+    const generatedEmail = `${mobileNumber}@farmerchain.app`;
+
+    const { error } = await supabase.auth.signInWithPassword({ 
+      email: generatedEmail, 
+      password 
+    });
 
     if (error) {
       toast.error(error.message);
@@ -50,8 +56,11 @@ const Auth = () => {
     e.preventDefault();
     setLoading(true);
 
+    // Generate email from mobile number for authentication
+    const generatedEmail = `${mobileNumber}@farmerchain.app`;
+
     const { data, error } = await supabase.auth.signUp({
-      email,
+      email: generatedEmail,
       password,
       options: {
         emailRedirectTo: `${window.location.origin}/`,
@@ -59,8 +68,8 @@ const Auth = () => {
           role,
           full_name: fullName,
           mobile_number: mobileNumber,
-          state,
-          district,
+          state: "",
+          district: "",
         },
       },
     });
@@ -93,8 +102,15 @@ const Auth = () => {
             <TabsContent value="signin">
               <form onSubmit={handleSignIn} className="space-y-4">
                 <div>
-                  <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                  <Label htmlFor="mobile">Mobile Number</Label>
+                  <Input 
+                    id="mobile" 
+                    type="tel"
+                    placeholder="10-digit mobile number"
+                    value={mobileNumber} 
+                    onChange={(e) => setMobileNumber(e.target.value)} 
+                    required 
+                  />
                 </div>
                 <div>
                   <Label htmlFor="password">Password</Label>
@@ -127,19 +143,14 @@ const Auth = () => {
                 </div>
                 <div>
                   <Label htmlFor="mobile">Mobile Number</Label>
-                  <Input id="mobile" value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} required />
-                </div>
-                <div>
-                  <Label htmlFor="state">State</Label>
-                  <Input id="state" value={state} onChange={(e) => setState(e.target.value)} required />
-                </div>
-                <div>
-                  <Label htmlFor="district">District</Label>
-                  <Input id="district" value={district} onChange={(e) => setDistrict(e.target.value)} required />
-                </div>
-                <div>
-                  <Label htmlFor="signupEmail">Email</Label>
-                  <Input id="signupEmail" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                  <Input 
+                    id="mobile" 
+                    type="tel"
+                    placeholder="10-digit mobile number"
+                    value={mobileNumber} 
+                    onChange={(e) => setMobileNumber(e.target.value)} 
+                    required 
+                  />
                 </div>
                 <div>
                   <Label htmlFor="signupPassword">Password</Label>

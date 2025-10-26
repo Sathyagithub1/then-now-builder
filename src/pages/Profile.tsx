@@ -150,6 +150,17 @@ export default function Profile() {
               />
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="email">Email (Optional)</Label>
+              <Input
+                id="email"
+                type="email"
+                value={profile?.email || ""}
+                onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+                placeholder="your.email@example.com"
+              />
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="state">State</Label>
