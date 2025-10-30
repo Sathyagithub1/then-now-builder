@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useUserRoles } from "@/hooks/useUserRoles";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,6 +34,7 @@ interface WorkerProfile {
 
 export default function AdvancedSearch() {
   const navigate = useNavigate();
+  const { data: rolesData } = useUserRoles();
   const [workCropTypes, setWorkCropTypes] = useState<WorkCropType[]>([]);
   const [selectedCropTypes, setSelectedCropTypes] = useState<string[]>([]);
   const [searchRadius, setSearchRadius] = useState([5]);
@@ -43,8 +45,12 @@ export default function AdvancedSearch() {
   const [saveSearchName, setSaveSearchName] = useState("");
 
   useEffect(() => {
-    loadWorkCropTypes();
-  }, []);
+    if (rolesData?.activeRole === "farm_worker") {
+      navigate("/job-postings");
+    } else {
+      loadWorkCropTypes();
+    }
+  }, [rolesData, navigate]);
 
   const loadWorkCropTypes = async () => {
     const { data, error } = await supabase

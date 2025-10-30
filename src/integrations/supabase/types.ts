@@ -125,6 +125,94 @@ export type Database = {
         }
         Relationships: []
       }
+      job_postings: {
+        Row: {
+          coordinates_lat: number | null
+          coordinates_lng: number | null
+          created_at: string | null
+          description: string
+          end_date: string | null
+          estimated_budget: number | null
+          estimated_duration: string | null
+          farmer_id: string
+          id: string
+          location_address: string | null
+          location_district: string
+          location_state: string
+          start_date: string | null
+          status: string | null
+          tags: string[] | null
+          title: string
+          updated_at: string | null
+          work_crop_type_id: string | null
+          work_type_id: string | null
+        }
+        Insert: {
+          coordinates_lat?: number | null
+          coordinates_lng?: number | null
+          created_at?: string | null
+          description: string
+          end_date?: string | null
+          estimated_budget?: number | null
+          estimated_duration?: string | null
+          farmer_id: string
+          id?: string
+          location_address?: string | null
+          location_district: string
+          location_state: string
+          start_date?: string | null
+          status?: string | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string | null
+          work_crop_type_id?: string | null
+          work_type_id?: string | null
+        }
+        Update: {
+          coordinates_lat?: number | null
+          coordinates_lng?: number | null
+          created_at?: string | null
+          description?: string
+          end_date?: string | null
+          estimated_budget?: number | null
+          estimated_duration?: string | null
+          farmer_id?: string
+          id?: string
+          location_address?: string | null
+          location_district?: string
+          location_state?: string
+          start_date?: string | null
+          status?: string | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string | null
+          work_crop_type_id?: string | null
+          work_type_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_postings_farmer_id_fkey"
+            columns: ["farmer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_postings_work_crop_type_id_fkey"
+            columns: ["work_crop_type_id"]
+            isOneToOne: false
+            referencedRelation: "work_crop_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_postings_work_type_id_fkey"
+            columns: ["work_type_id"]
+            isOneToOne: false
+            referencedRelation: "work_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_payments: {
         Row: {
           amount: number
@@ -410,6 +498,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          active_role: Database["public"]["Enums"]["user_role"] | null
           address: string | null
           avatar_url: string | null
           average_rating: number | null
@@ -444,6 +533,7 @@ export type Database = {
           user_type: string
         }
         Insert: {
+          active_role?: Database["public"]["Enums"]["user_role"] | null
           address?: string | null
           avatar_url?: string | null
           average_rating?: number | null
@@ -478,6 +568,7 @@ export type Database = {
           user_type: string
         }
         Update: {
+          active_role?: Database["public"]["Enums"]["user_role"] | null
           address?: string | null
           avatar_url?: string | null
           average_rating?: number | null

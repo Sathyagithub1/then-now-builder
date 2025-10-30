@@ -5,11 +5,45 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import logoImage from "@/assets/farmerchain-logo.png";
+import { RoleToggle } from "@/components/RoleToggle";
+import { useUserRoles } from "@/hooks/useUserRoles";
+import { useQuery } from "@tanstack/react-query";
 
 const Index = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
-  const [profile, setProfile] = useState<any>(null);
+  const { data: rolesData } = useUserRoles();
+  
+  const { data: workers } = useQuery({
+    queryKey: ["farm-workers"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("role", "farm_worker")
+        .eq("is_active", true)
+        .limit(6);
+      return data || [];
+    },
+    enabled: rolesData?.activeRole === "farmer",
+  });
+
+  const { data: jobPostings } = useQuery({
+    queryKey: ["job-postings-home"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("job_postings")
+        .select(`
+          *,
+          profiles(full_name, state, district)
+        `)
+        .eq("status", "open")
+        .order("created_at", { ascending: false })
+        .limit(6);
+      return data || [];
+    },
+    enabled: rolesData?.activeRole === "farm_worker",
+  });
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -17,7 +51,6 @@ const Index = () => {
         navigate("/auth");
       } else {
         setUser(session.user);
-        loadProfile(session.user.id);
       }
     });
 
@@ -26,22 +59,11 @@ const Index = () => {
         navigate("/auth");
       } else {
         setUser(session.user);
-        loadProfile(session.user.id);
       }
     });
 
     return () => subscription.unsubscribe();
   }, [navigate]);
-
-  const loadProfile = async (userId: string) => {
-    const { data } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", userId)
-      .single();
-    
-    if (data) setProfile(data);
-  };
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -60,16 +82,23 @@ const Index = () => {
               <h1 className="text-2xl font-bold text-primary">FarmerChain</h1>
             </div>
             <nav className="hidden md:flex gap-4">
-              <Button variant="ghost" size="sm" onClick={() => navigate("/search")}>Advanced Search</Button>
-              <Button variant="ghost" size="sm" onClick={() => navigate("/saved-searches")}>Saved Searches</Button>
+              {rolesData?.activeRole === "farmer" ? (
+                <>
+                  <Button variant="ghost" size="sm" onClick={() => navigate("/search")}>Find Workers</Button>
+                  <Button variant="ghost" size="sm" onClick={() => navigate("/create-job")}>Post Job</Button>
+                </>
+              ) : (
+                <>
+                  <Button variant="ghost" size="sm" onClick={() => navigate("/job-postings")}>Find Jobs</Button>
+                  <Button variant="ghost" size="sm" onClick={() => navigate("/availability")}>My Availability</Button>
+                </>
+              )}
               <Button variant="ghost" size="sm" onClick={() => navigate("/orders")}>Orders</Button>
               <Button variant="ghost" size="sm" onClick={() => navigate("/chat")}>Messages</Button>
-              {profile?.role === "farm_worker" && (
-                <Button variant="ghost" size="sm" onClick={() => navigate("/availability")}>My Availability</Button>
-              )}
             </nav>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
+            <RoleToggle />
             <Button variant="outline" onClick={() => navigate("/dashboard")}>
               Dashboard
             </Button>
@@ -86,90 +115,78 @@ const Index = () => {
       <main className="container mx-auto px-4 py-8">
         <div className="text-center mb-12">
           <h2 className="text-4xl font-bold mb-4">Welcome to FarmerChain</h2>
-          <p className="text-xl text-muted-foreground">Connecting farmers and agricultural services</p>
+          <p className="text-xl text-muted-foreground">
+            {rolesData?.activeRole === "farmer" 
+              ? "Find and hire farm workers" 
+              : "Find job opportunities"}
+          </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/search")}>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <span className="text-2xl">🔍</span>
-                Advanced Search
-              </CardTitle>
-              <CardDescription>Find workers with filters</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button className="w-full">Search Now</Button>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/saved-searches")}>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <span className="text-2xl">💾</span>
-                Saved Searches
-              </CardTitle>
-              <CardDescription>View your saved searches</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button className="w-full" variant="secondary">View Saved</Button>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/orders")}>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <span className="text-2xl">📋</span>
-                My Orders
-              </CardTitle>
-              <CardDescription>Manage your work orders</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button className="w-full" variant="secondary">View Orders</Button>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/chat")}>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <span className="text-2xl">💬</span>
-                Messages
-              </CardTitle>
-              <CardDescription>Chat with workers and farmers</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button className="w-full" variant="secondary">Open Chat</Button>
-            </CardContent>
-          </Card>
-
-          {profile?.role === "farm_worker" && (
-            <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/availability")}>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <span className="text-2xl">📅</span>
-                  My Availability
-                </CardTitle>
-                <CardDescription>Manage when you're available</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button className="w-full" variant="secondary">Set Availability</Button>
-              </CardContent>
-            </Card>
-          )}
-
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/admin-panel")}>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <span className="text-2xl">⚙️</span>
-                Admin Panel
-              </CardTitle>
-              <CardDescription>Manage work types (Admin)</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button className="w-full" variant="outline">Admin Tools</Button>
-            </CardContent>
-          </Card>
-        </div>
+        {rolesData?.activeRole === "farmer" ? (
+          <>
+            <div className="mb-8 flex justify-between items-center">
+              <h3 className="text-2xl font-bold">Available Farm Workers</h3>
+              <Button onClick={() => navigate("/search")}>View All Workers</Button>
+            </div>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+              {workers?.map((worker: any) => (
+                <Card key={worker.id} className="hover:shadow-lg transition-shadow">
+                  <CardHeader>
+                    <CardTitle>{worker.full_name}</CardTitle>
+                    <CardDescription>
+                      {worker.district}, {worker.state}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm mb-4">{worker.bio || "No bio available"}</p>
+                    <Button 
+                      className="w-full" 
+                      onClick={() => navigate(`/workers/${worker.id}`)}
+                    >
+                      View Profile
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+            <div className="text-center">
+              <Button size="lg" onClick={() => navigate("/create-job")}>
+                Post a Job
+              </Button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="mb-8 flex justify-between items-center">
+              <h3 className="text-2xl font-bold">Latest Job Postings</h3>
+              <Button onClick={() => navigate("/job-postings")}>View All Jobs</Button>
+            </div>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {jobPostings?.map((job: any) => (
+                <Card key={job.id} className="hover:shadow-lg transition-shadow">
+                  <CardHeader>
+                    <CardTitle>{job.title}</CardTitle>
+                    <CardDescription>
+                      {job.profiles?.full_name} • {job.profiles?.district}, {job.profiles?.state}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm mb-4 line-clamp-3">{job.description}</p>
+                    {job.estimated_budget && (
+                      <p className="font-semibold mb-2">Budget: ₹{job.estimated_budget}</p>
+                    )}
+                    <Button 
+                      className="w-full"
+                      onClick={() => navigate("/job-postings")}
+                    >
+                      View Details
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </>
+        )}
       </main>
     </div>
   );
