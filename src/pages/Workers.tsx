@@ -36,27 +36,22 @@ const Workers = () => {
 
     setCurrentUser(profile);
 
-    // Fetch all farm workers with their ratings
+    // Fetch all farm workers using the public_profiles view (excludes sensitive PII)
     const { data: workersData, error } = await supabase
-      .from("profiles")
-      .select(`
-        *,
-        order_reviews:order_reviews!reviewee_id(rating)
-      `)
+      .from("public_profiles")
+      .select("*")
       .eq("role", "farm_worker")
       .eq("is_active", true);
 
     if (error) {
       toast.error("Error loading workers");
     } else {
-      // Calculate average rating for each worker
-      const workersWithRatings = workersData?.map(worker => {
-        const ratings = worker.order_reviews || [];
-        const avgRating = ratings.length > 0
-          ? ratings.reduce((sum: number, r: any) => sum + r.rating, 0) / ratings.length
-          : 0;
-        return { ...worker, avgRating, reviewCount: ratings.length };
-      }) || [];
+      // Use the average_rating and total_ratings from the view
+      const workersWithRatings = workersData?.map(worker => ({
+        ...worker,
+        avgRating: worker.average_rating || 0,
+        reviewCount: worker.total_ratings || 0
+      })) || [];
       setWorkers(workersWithRatings);
     }
     setLoading(false);

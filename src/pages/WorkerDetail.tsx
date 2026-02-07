@@ -51,9 +51,9 @@ const WorkerDetail = () => {
 
     setCurrentUser(profile);
 
-    // Fetch worker details
+    // Fetch worker details using public_profiles view (excludes sensitive PII)
     const { data: workerData, error: workerError } = await supabase
-      .from("profiles")
+      .from("public_profiles")
       .select("*")
       .eq("id", id)
       .single();
@@ -153,7 +153,6 @@ const WorkerDetail = () => {
                     <CardTitle className="text-3xl mb-2">{worker.full_name}</CardTitle>
                     <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
                       <span>📍 {worker.district}, {worker.state}</span>
-                      <span>📞 {worker.mobile_number}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       {averageRating !== "N/A" && (
@@ -315,23 +314,16 @@ const WorkerDetail = () => {
           <div>
             <Card>
               <CardHeader>
-                <CardTitle>Contact Details</CardTitle>
+                <CardTitle>Location</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div>
-                  <p className="text-sm text-muted-foreground">Mobile</p>
-                  <p className="font-medium">{worker.mobile_number}</p>
-                </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Location</p>
                   <p className="font-medium">{worker.district}, {worker.state}</p>
                 </div>
-                {worker.upi_id && (
-                  <div>
-                    <p className="text-sm text-muted-foreground">UPI ID</p>
-                    <p className="font-medium">{worker.upi_id}</p>
-                  </div>
-                )}
+                <p className="text-xs text-muted-foreground">
+                  Contact information is shared after creating an order.
+                </p>
               </CardContent>
             </Card>
           </div>

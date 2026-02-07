@@ -76,8 +76,9 @@ const Chat = () => {
     });
 
     if (userIds.size > 0) {
+      // Use public_profiles view for other users (excludes sensitive PII)
       const { data: users } = await supabase
-        .from("profiles")
+        .from("public_profiles")
         .select("*")
         .in("id", Array.from(userIds));
 
@@ -242,7 +243,7 @@ const Chat = () => {
                   </Avatar>
                   <div>
                     <p className="font-semibold">{selectedUser.full_name}</p>
-                    <p className="text-sm text-muted-foreground">{selectedUser.mobile_number}</p>
+                    <p className="text-sm text-muted-foreground">{selectedUser.district}, {selectedUser.state}</p>
                   </div>
                 </div>
 
