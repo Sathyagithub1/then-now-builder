@@ -17,6 +17,25 @@ interface Notification {
   metadata: Record<string, unknown>;
 }
 
+interface AppSetting {
+  key: string;
+  value: string | null;
+}
+
+async function getAppSettings(supabase: ReturnType<typeof createClient>): Promise<Record<string, string | null>> {
+  const { data } = await supabase
+    .from("app_settings")
+    .select("key, value");
+  
+  const settings: Record<string, string | null> = {};
+  if (data) {
+    for (const setting of data as AppSetting[]) {
+      settings[setting.key] = setting.value;
+    }
+  }
+  return settings;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -25,16 +44,28 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const msg91AuthKey = Deno.env.get("MSG91_AUTH_KEY");
-    const msg91SenderId = Deno.env.get("MSG91_SENDER_ID") || "FARMCH";
-    const msg91TemplateId = Deno.env.get("MSG91_TEMPLATE_ID");
 
-    // Check if MSG91 is configured
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Get settings from database
+    const settings = await getAppSettings(supabase);
+    
+    const msg91AuthKey = settings.MSG91_AUTH_KEY;
+    const msg91SenderId = settings.MSG91_SENDER_ID || "FARMCH";
+    const msg91TemplateId = settings.MSG91_TEMPLATE_ID;
+    const smsEnabled = settings.SMS_ENABLED === "true";
+
+    // Check if SMS is enabled and MSG91 is configured
+    if (!smsEnabled) {
+      return new Response(
+        JSON.stringify({ message: "SMS notifications are disabled" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     if (!msg91AuthKey) {
       console.log("MSG91 not configured - notifications will be logged only");
     }
-
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Fetch pending notifications
     const { data: notifications, error: fetchError } = await supabase
@@ -60,7 +91,7 @@ Deno.serve(async (req) => {
     for (const notification of notifications as Notification[]) {
       try {
         // Check user's notification preferences
-        const { data: settings } = await supabase
+        const { data: userSettings } = await supabase
           .from("notification_settings")
           .select("*")
           .eq("user_id", notification.user_id)
@@ -68,14 +99,14 @@ Deno.serve(async (req) => {
 
         // Check if this notification type is enabled
         let shouldSend = true;
-        if (settings) {
-          if (!settings.sms_enabled) shouldSend = false;
-          if (notification.type === "new_message" && !settings.new_message) shouldSend = false;
-          if (notification.type === "order_status" && !settings.order_status_change) shouldSend = false;
-          if (notification.type === "quote_received" && !settings.quote_received) shouldSend = false;
-          if (notification.type === "quote_response" && !settings.quote_response) shouldSend = false;
-          if (notification.type === "new_review" && !settings.new_review) shouldSend = false;
-          if (notification.type === "payment_update" && !settings.payment_updates) shouldSend = false;
+        if (userSettings) {
+          if (!userSettings.sms_enabled) shouldSend = false;
+          if (notification.type === "new_message" && !userSettings.new_message) shouldSend = false;
+          if (notification.type === "order_status" && !userSettings.order_status_change) shouldSend = false;
+          if (notification.type === "quote_received" && !userSettings.quote_received) shouldSend = false;
+          if (notification.type === "quote_response" && !userSettings.quote_response) shouldSend = false;
+          if (notification.type === "new_review" && !userSettings.new_review) shouldSend = false;
+          if (notification.type === "payment_update" && !userSettings.payment_updates) shouldSend = false;
         }
 
         if (!shouldSend) {
@@ -126,7 +157,7 @@ Deno.serve(async (req) => {
             throw new Error(responseData.message || "Failed to send SMS");
           }
         } else {
-          // No MSG91 configured - just mark as sent for logging purposes
+          // No MSG91 configured - just mark as logged
           await supabase
             .from("notifications")
             .update({ 
