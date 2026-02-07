@@ -2,8 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 interface Notification {
@@ -36,6 +35,86 @@ async function getAppSettings(supabase: ReturnType<typeof createClient>): Promis
   return settings;
 }
 
+async function sendMSG91SMS(
+  phoneNumber: string,
+  title: string,
+  message: string,
+  authKey: string,
+  templateId: string | null,
+  senderId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const formattedPhone = phoneNumber.startsWith("91") 
+      ? phoneNumber 
+      : phoneNumber.replace("+", "").startsWith("91") 
+        ? phoneNumber.replace("+", "") 
+        : `91${phoneNumber.replace("+", "")}`;
+    
+    const response = await fetch("https://control.msg91.com/api/v5/flow/", {
+      method: "POST",
+      headers: {
+        "authkey": authKey,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        flow_id: templateId,
+        sender: senderId,
+        mobiles: formattedPhone,
+        VAR1: title,
+        VAR2: message,
+      }),
+    });
+
+    const result = await response.json();
+    
+    if (response.ok && result.type === "success") {
+      return { success: true };
+    } else {
+      return { success: false, error: result.message || "MSG91 API error" };
+    }
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : "MSG91 request failed" };
+  }
+}
+
+async function sendTwilioSMS(
+  phoneNumber: string,
+  message: string,
+  accountSid: string,
+  authToken: string,
+  fromNumber: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const formattedPhone = phoneNumber.startsWith("+") ? phoneNumber : `+91${phoneNumber}`;
+    
+    const response = await fetch(
+      `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
+      {
+        method: "POST",
+        headers: {
+          "Authorization": `Basic ${btoa(`${accountSid}:${authToken}`)}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          To: formattedPhone,
+          From: fromNumber,
+          Body: message,
+        }),
+      }
+    );
+
+    const result = await response.json();
+    
+    if (response.ok && result.sid) {
+      return { success: true };
+    } else {
+      return { success: false, error: result.message || "Twilio API error" };
+    }
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : "Twilio request failed" };
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -50,21 +129,26 @@ Deno.serve(async (req) => {
     // Get settings from database
     const settings = await getAppSettings(supabase);
     
+    const smsEnabled = settings.SMS_ENABLED === "true";
+    const smsProvider = settings.SMS_PROVIDER || "msg91";
+    
+    // MSG91 settings
     const msg91AuthKey = settings.MSG91_AUTH_KEY;
     const msg91SenderId = settings.MSG91_SENDER_ID || "FARMCH";
     const msg91TemplateId = settings.MSG91_TEMPLATE_ID;
-    const smsEnabled = settings.SMS_ENABLED === "true";
+    
+    // Twilio settings
+    const twilioEnabled = settings.TWILIO_ENABLED === "true";
+    const twilioAccountSid = settings.TWILIO_ACCOUNT_SID;
+    const twilioAuthToken = settings.TWILIO_AUTH_TOKEN;
+    const twilioPhoneNumber = settings.TWILIO_PHONE_NUMBER;
 
-    // Check if SMS is enabled and MSG91 is configured
+    // Check if SMS is enabled
     if (!smsEnabled) {
       return new Response(
         JSON.stringify({ message: "SMS notifications are disabled" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
-    }
-
-    if (!msg91AuthKey) {
-      console.log("MSG91 not configured - notifications will be logged only");
     }
 
     // Fetch pending notifications
@@ -85,6 +169,8 @@ Deno.serve(async (req) => {
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    console.log(`Processing ${notifications.length} pending notifications via ${smsProvider}`);
 
     const results: { id: string; success: boolean; error?: string }[] = [];
 
@@ -110,7 +196,6 @@ Deno.serve(async (req) => {
         }
 
         if (!shouldSend) {
-          // Mark as skipped
           await supabase
             .from("notifications")
             .update({ status: "skipped", sent_at: new Date().toISOString() })
@@ -120,69 +205,68 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // If MSG91 is configured, send the SMS
-        if (msg91AuthKey && notification.phone_number) {
-          const phoneNumber = notification.phone_number.startsWith("+91")
-            ? notification.phone_number
-            : `+91${notification.phone_number}`;
-
-          // MSG91 Send OTP/SMS API
-          const smsPayload = {
-            flow_id: msg91TemplateId,
-            sender: msg91SenderId,
-            mobiles: phoneNumber.replace("+", ""),
-            VAR1: notification.title,
-            VAR2: notification.message,
-          };
-
-          const response = await fetch("https://control.msg91.com/api/v5/flow/", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              authkey: msg91AuthKey,
-            },
-            body: JSON.stringify(smsPayload),
-          });
-
-          const responseData = await response.json();
-
-          if (response.ok && responseData.type === "success") {
-            await supabase
-              .from("notifications")
-              .update({ status: "sent", sent_at: new Date().toISOString() })
-              .eq("id", notification.id);
-            
-            results.push({ id: notification.id, success: true });
-          } else {
-            throw new Error(responseData.message || "Failed to send SMS");
-          }
-        } else {
-          // No MSG91 configured - just mark as logged
+        if (!notification.phone_number) {
           await supabase
             .from("notifications")
-            .update({ 
-              status: msg91AuthKey ? "failed" : "logged", 
-              sent_at: new Date().toISOString(),
-              error_message: msg91AuthKey ? "Missing phone number" : "MSG91 not configured"
-            })
+            .update({ status: "failed", error_message: "Missing phone number", sent_at: new Date().toISOString() })
             .eq("id", notification.id);
           
-          results.push({ 
-            id: notification.id, 
-            success: !msg91AuthKey,
-            error: msg91AuthKey ? "Missing phone number" : undefined 
-          });
+          results.push({ id: notification.id, success: false, error: "Missing phone number" });
+          continue;
+        }
+
+        // Send SMS based on provider preference
+        let smsResult: { success: boolean; error?: string };
+        
+        if (smsProvider === "twilio" && twilioEnabled && twilioAccountSid && twilioAuthToken && twilioPhoneNumber) {
+          smsResult = await sendTwilioSMS(
+            notification.phone_number,
+            `${notification.title}: ${notification.message}`,
+            twilioAccountSid,
+            twilioAuthToken,
+            twilioPhoneNumber
+          );
+        } else if (msg91AuthKey) {
+          smsResult = await sendMSG91SMS(
+            notification.phone_number,
+            notification.title,
+            notification.message,
+            msg91AuthKey,
+            msg91TemplateId,
+            msg91SenderId
+          );
+        } else {
+          // No SMS provider configured - mark as logged
+          await supabase
+            .from("notifications")
+            .update({ status: "logged", sent_at: new Date().toISOString(), error_message: "No SMS provider configured" })
+            .eq("id", notification.id);
+          
+          results.push({ id: notification.id, success: true, error: "No SMS provider configured" });
+          continue;
+        }
+
+        if (smsResult.success) {
+          await supabase
+            .from("notifications")
+            .update({ status: "sent", sent_at: new Date().toISOString() })
+            .eq("id", notification.id);
+          
+          results.push({ id: notification.id, success: true });
+        } else {
+          await supabase
+            .from("notifications")
+            .update({ status: "failed", error_message: smsResult.error, sent_at: new Date().toISOString() })
+            .eq("id", notification.id);
+          
+          results.push({ id: notification.id, success: false, error: smsResult.error });
         }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : "Unknown error";
         
         await supabase
           .from("notifications")
-          .update({ 
-            status: "failed", 
-            error_message: errorMessage,
-            sent_at: new Date().toISOString() 
-          })
+          .update({ status: "failed", error_message: errorMessage, sent_at: new Date().toISOString() })
           .eq("id", notification.id);
         
         results.push({ id: notification.id, success: false, error: errorMessage });
@@ -192,6 +276,7 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         message: `Processed ${results.length} notifications`,
+        provider: smsProvider,
         results 
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -200,10 +285,7 @@ Deno.serve(async (req) => {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
     return new Response(
       JSON.stringify({ error: errorMessage }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, "Content-Type": "application/json" } 
-      }
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });

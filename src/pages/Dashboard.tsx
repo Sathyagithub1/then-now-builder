@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import logoImage from "@/assets/farmerchain-logo.png";
 import { toast } from "sonner";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -149,7 +150,8 @@ const Dashboard = () => {
             <img src={logoImage} alt="Logo" className="h-8 w-auto" style={{ imageRendering: 'crisp-edges' }} />
             <h1 className="text-2xl font-bold text-primary">FarmerChain</h1>
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
+            <NotificationBell />
             {isAdmin && (
               <Button variant="outline" onClick={() => navigate("/admin")}>
                 Admin Panel

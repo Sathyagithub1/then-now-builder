@@ -20,6 +20,8 @@ import MyWorkTypes from "./pages/MyWorkTypes";
 import NotFound from "./pages/NotFound";
 import JobPostings from "./pages/JobPostings";
 import CreateJobPosting from "./pages/CreateJobPosting";
+import Notifications from "./pages/Notifications";
+import { NotificationToast } from "./components/notifications/NotificationToast";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +30,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
+      <NotificationToast />
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
@@ -46,6 +49,7 @@ const App = () => (
           <Route path="/admin-panel" element={<AdminPanel />} />
           <Route path="/job-postings" element={<JobPostings />} />
           <Route path="/create-job" element={<CreateJobPosting />} />
+          <Route path="/notifications" element={<Notifications />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
