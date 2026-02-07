@@ -5,13 +5,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { RoleToggle } from "@/components/RoleToggle";
+import { WorkerQuoteForm } from "@/components/quotes/WorkerQuoteForm";
 import logoImage from "@/assets/farmerchain-logo.png";
 
 const JobPostings = () => {
   const navigate = useNavigate();
-
+  const [selectedJob, setSelectedJob] = useState<any>(null);
+  const [quoteDialogOpen, setQuoteDialogOpen] = useState(false);
   const { data: jobPostings, isLoading } = useQuery({
     queryKey: ["job-postings"],
     queryFn: async () => {
@@ -109,9 +112,21 @@ const JobPostings = () => {
                       </div>
                     )}
                   </div>
-                  <Button className="w-full mt-4" onClick={() => navigate(`/chat`)}>
-                    Contact Farmer
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button className="flex-1" onClick={() => navigate(`/chat`)}>
+                      Contact Farmer
+                    </Button>
+                    <Button 
+                      variant="secondary" 
+                      className="flex-1"
+                      onClick={() => {
+                        setSelectedJob(job);
+                        setQuoteDialogOpen(true);
+                      }}
+                    >
+                      Submit Quote
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             ))}
@@ -123,6 +138,28 @@ const JobPostings = () => {
             </CardContent>
           </Card>
         )}
+
+        <Dialog open={quoteDialogOpen} onOpenChange={setQuoteDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Submit a Quote</DialogTitle>
+              <DialogDescription>
+                Send your proposal for: {selectedJob?.title}
+              </DialogDescription>
+            </DialogHeader>
+            {selectedJob && (
+              <WorkerQuoteForm
+                farmerId={selectedJob.farmer_id}
+                jobPostingId={selectedJob.id}
+                onSuccess={() => {
+                  setQuoteDialogOpen(false);
+                  setSelectedJob(null);
+                }}
+                onCancel={() => setQuoteDialogOpen(false)}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );
