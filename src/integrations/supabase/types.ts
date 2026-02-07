@@ -241,6 +241,93 @@ export type Database = {
           },
         ]
       }
+      notification_settings: {
+        Row: {
+          created_at: string | null
+          id: string
+          new_message: boolean | null
+          new_review: boolean | null
+          order_status_change: boolean | null
+          payment_updates: boolean | null
+          quote_received: boolean | null
+          quote_response: boolean | null
+          sms_enabled: boolean | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          new_message?: boolean | null
+          new_review?: boolean | null
+          order_status_change?: boolean | null
+          payment_updates?: boolean | null
+          quote_received?: boolean | null
+          quote_response?: boolean | null
+          sms_enabled?: boolean | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          new_message?: boolean | null
+          new_review?: boolean | null
+          order_status_change?: boolean | null
+          payment_updates?: boolean | null
+          quote_received?: boolean | null
+          quote_response?: boolean | null
+          sms_enabled?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          id: string
+          message: string
+          metadata: Json | null
+          phone_number: string | null
+          sent_at: string | null
+          status: string | null
+          title: string
+          type: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          message: string
+          metadata?: Json | null
+          phone_number?: string | null
+          sent_at?: string | null
+          status?: string | null
+          title: string
+          type: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          message?: string
+          metadata?: Json | null
+          phone_number?: string | null
+          sent_at?: string | null
+          status?: string | null
+          title?: string
+          type?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       order_payments: {
         Row: {
           amount: number
