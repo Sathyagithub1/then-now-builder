@@ -87,6 +87,13 @@ export type Database = {
             foreignKeyName: "chat_messages_receiver_id_fkey"
             columns: ["receiver_id"]
             isOneToOne: false
+            referencedRelation: "profile_sensitive_data"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_messages_receiver_id_fkey"
+            columns: ["receiver_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -95,6 +102,13 @@ export type Database = {
             columns: ["receiver_id"]
             isOneToOne: false
             referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profile_sensitive_data"
             referencedColumns: ["id"]
           },
           {
@@ -140,6 +154,13 @@ export type Database = {
             foreignKeyName: "commission_history_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
+            referencedRelation: "profile_sensitive_data"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commission_history_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -151,6 +172,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      function_audit_logs: {
+        Row: {
+          created_at: string
+          details: Json | null
+          function_name: string
+          id: string
+          invocation_source: string
+          invoked_at: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          details?: Json | null
+          function_name: string
+          id?: string
+          invocation_source: string
+          invoked_at?: string
+          status: string
+        }
+        Update: {
+          created_at?: string
+          details?: Json | null
+          function_name?: string
+          id?: string
+          invocation_source?: string
+          invoked_at?: string
+          status?: string
+        }
+        Relationships: []
       }
       job_alerts: {
         Row: {
@@ -244,6 +295,13 @@ export type Database = {
           work_type_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "job_postings_farmer_id_fkey"
+            columns: ["farmer_id"]
+            isOneToOne: false
+            referencedRelation: "profile_sensitive_data"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "job_postings_farmer_id_fkey"
             columns: ["farmer_id"]
@@ -422,6 +480,13 @@ export type Database = {
             foreignKeyName: "order_payments_payer_id_fkey"
             columns: ["payer_id"]
             isOneToOne: false
+            referencedRelation: "profile_sensitive_data"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_payments_payer_id_fkey"
+            columns: ["payer_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -430,6 +495,13 @@ export type Database = {
             columns: ["payer_id"]
             isOneToOne: false
             referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_payments_receiver_id_fkey"
+            columns: ["receiver_id"]
+            isOneToOne: false
+            referencedRelation: "profile_sensitive_data"
             referencedColumns: ["id"]
           },
           {
@@ -494,6 +566,13 @@ export type Database = {
             foreignKeyName: "order_reviews_reviewee_id_fkey"
             columns: ["reviewee_id"]
             isOneToOne: false
+            referencedRelation: "profile_sensitive_data"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_reviews_reviewee_id_fkey"
+            columns: ["reviewee_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -502,6 +581,13 @@ export type Database = {
             columns: ["reviewee_id"]
             isOneToOne: false
             referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_reviews_reviewer_id_fkey"
+            columns: ["reviewer_id"]
+            isOneToOne: false
+            referencedRelation: "profile_sensitive_data"
             referencedColumns: ["id"]
           },
           {
@@ -595,6 +681,13 @@ export type Database = {
             foreignKeyName: "orders_farmer_id_fkey"
             columns: ["farmer_id"]
             isOneToOne: false
+            referencedRelation: "profile_sensitive_data"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_farmer_id_fkey"
+            columns: ["farmer_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -610,6 +703,13 @@ export type Database = {
             columns: ["work_type_id"]
             isOneToOne: false
             referencedRelation: "work_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_worker_id_fkey"
+            columns: ["worker_id"]
+            isOneToOne: false
+            referencedRelation: "profile_sensitive_data"
             referencedColumns: ["id"]
           },
           {
@@ -757,6 +857,13 @@ export type Database = {
             foreignKeyName: "payments_payer_id_fkey"
             columns: ["payer_id"]
             isOneToOne: false
+            referencedRelation: "profile_sensitive_data"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_payer_id_fkey"
+            columns: ["payer_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -778,6 +885,13 @@ export type Database = {
             foreignKeyName: "payments_receiver_id_fkey"
             columns: ["receiver_id"]
             isOneToOne: false
+            referencedRelation: "profile_sensitive_data"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_receiver_id_fkey"
+            columns: ["receiver_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -789,6 +903,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      profile_access_logs: {
+        Row: {
+          access_type: string
+          accessed_fields: string[] | null
+          accessed_profile_id: string
+          created_at: string
+          id: string
+          ip_address: string | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          access_type: string
+          accessed_fields?: string[] | null
+          accessed_profile_id: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          access_type?: string
+          accessed_fields?: string[] | null
+          accessed_profile_id?: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -943,6 +1090,13 @@ export type Database = {
             foreignKeyName: "quotes_provider_id_fkey"
             columns: ["provider_id"]
             isOneToOne: false
+            referencedRelation: "profile_sensitive_data"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -951,6 +1105,13 @@ export type Database = {
             columns: ["provider_id"]
             isOneToOne: false
             referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_requester_id_fkey"
+            columns: ["requester_id"]
+            isOneToOne: false
+            referencedRelation: "profile_sensitive_data"
             referencedColumns: ["id"]
           },
           {
@@ -1005,6 +1166,13 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "reviews_reviewer_id_fkey"
+            columns: ["reviewer_id"]
+            isOneToOne: false
+            referencedRelation: "profile_sensitive_data"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "reviews_reviewer_id_fkey"
             columns: ["reviewer_id"]
@@ -1141,6 +1309,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "services_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profile_sensitive_data"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "services_user_id_fkey"
             columns: ["user_id"]
@@ -1420,6 +1595,45 @@ export type Database = {
       }
     }
     Views: {
+      profile_sensitive_data: {
+        Row: {
+          bank_account_holder_name: string | null
+          bank_account_number: string | null
+          bank_ifsc_code: string | null
+          election_card_number: string | null
+          gov_id_number: string | null
+          gov_id_type: Database["public"]["Enums"]["gov_id_type"] | null
+          id: string | null
+          passport_number: string | null
+          ration_card_number: string | null
+          upi_id: string | null
+        }
+        Insert: {
+          bank_account_holder_name?: string | null
+          bank_account_number?: string | null
+          bank_ifsc_code?: string | null
+          election_card_number?: string | null
+          gov_id_number?: string | null
+          gov_id_type?: Database["public"]["Enums"]["gov_id_type"] | null
+          id?: string | null
+          passport_number?: string | null
+          ration_card_number?: string | null
+          upi_id?: string | null
+        }
+        Update: {
+          bank_account_holder_name?: string | null
+          bank_account_number?: string | null
+          bank_ifsc_code?: string | null
+          election_card_number?: string | null
+          gov_id_number?: string | null
+          gov_id_type?: Database["public"]["Enums"]["gov_id_type"] | null
+          id?: string | null
+          passport_number?: string | null
+          ration_card_number?: string | null
+          upi_id?: string | null
+        }
+        Relationships: []
+      }
       public_job_postings: {
         Row: {
           created_at: string | null
@@ -1476,6 +1690,13 @@ export type Database = {
           work_type_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "job_postings_farmer_id_fkey"
+            columns: ["farmer_id"]
+            isOneToOne: false
+            referencedRelation: "profile_sensitive_data"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "job_postings_farmer_id_fkey"
             columns: ["farmer_id"]
@@ -1575,6 +1796,14 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      log_profile_access: {
+        Args: {
+          p_access_type: string
+          p_accessed_fields?: string[]
+          p_accessed_profile_id: string
+        }
+        Returns: undefined
       }
     }
     Enums: {
