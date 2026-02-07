@@ -1140,6 +1140,92 @@ export type Database = {
       }
     }
     Views: {
+      public_job_postings: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          end_date: string | null
+          estimated_budget: number | null
+          estimated_duration: string | null
+          farmer_id: string | null
+          id: string | null
+          location_district: string | null
+          location_state: string | null
+          start_date: string | null
+          status: string | null
+          tags: string[] | null
+          title: string | null
+          updated_at: string | null
+          work_crop_type_id: string | null
+          work_type_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          end_date?: string | null
+          estimated_budget?: number | null
+          estimated_duration?: string | null
+          farmer_id?: string | null
+          id?: string | null
+          location_district?: string | null
+          location_state?: string | null
+          start_date?: string | null
+          status?: string | null
+          tags?: string[] | null
+          title?: string | null
+          updated_at?: string | null
+          work_crop_type_id?: string | null
+          work_type_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          end_date?: string | null
+          estimated_budget?: number | null
+          estimated_duration?: string | null
+          farmer_id?: string | null
+          id?: string | null
+          location_district?: string | null
+          location_state?: string | null
+          start_date?: string | null
+          status?: string | null
+          tags?: string[] | null
+          title?: string | null
+          updated_at?: string | null
+          work_crop_type_id?: string | null
+          work_type_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_postings_farmer_id_fkey"
+            columns: ["farmer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_postings_farmer_id_fkey"
+            columns: ["farmer_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_postings_work_crop_type_id_fkey"
+            columns: ["work_crop_type_id"]
+            isOneToOne: false
+            referencedRelation: "work_crop_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_postings_work_type_id_fkey"
+            columns: ["work_type_id"]
+            isOneToOne: false
+            referencedRelation: "work_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       public_profiles: {
         Row: {
           active_role: Database["public"]["Enums"]["user_role"] | null

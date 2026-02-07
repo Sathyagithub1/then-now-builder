@@ -15,15 +15,15 @@ const JobPostings = () => {
   const { data: jobPostings, isLoading } = useQuery({
     queryKey: ["job-postings"],
     queryFn: async () => {
+      // Use public_job_postings view which excludes precise coordinates for privacy
       const { data, error } = await supabase
-        .from("job_postings")
+        .from("public_job_postings")
         .select(`
           *,
           work_types(name),
           work_crop_types(name),
-          profiles(full_name, mobile_number, state, district)
+          farmer:farmer_id(full_name, state, district)
         `)
-        .eq("status", "open")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -78,7 +78,7 @@ const JobPostings = () => {
                     </Badge>
                   </CardTitle>
                   <CardDescription>
-                    {job.profiles?.full_name} • {job.profiles?.district}, {job.profiles?.state}
+                    {job.farmer?.full_name} • {job.location_district}, {job.location_state}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>

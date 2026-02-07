@@ -75,6 +75,14 @@ const Orders = () => {
       return;
     }
 
+    // Client-side validation for better UX (server also validates)
+    if ((newStatus === "canceled" || newStatus === "dispute") && !statusNote.trim()) {
+      toast.error(newStatus === "canceled" 
+        ? "Please provide a cancellation reason" 
+        : "Please provide a dispute reason");
+      return;
+    }
+
     const updateData: any = { status: newStatus };
     if (statusNote) {
       if (newStatus === "canceled") updateData.cancellation_reason = statusNote;
@@ -88,7 +96,19 @@ const Orders = () => {
       .eq("id", selectedOrder.id);
 
     if (error) {
-      toast.error("Error updating order");
+      // Display meaningful server validation errors
+      const message = error.message || "Error updating order";
+      if (message.includes("Only the farmer can mark")) {
+        toast.error("Only the farmer can mark this order as completed");
+      } else if (message.includes("Cannot change a completed order")) {
+        toast.error("Cannot modify a completed order (except to raise a dispute)");
+      } else if (message.includes("Cannot modify a canceled order")) {
+        toast.error("Canceled orders cannot be modified");
+      } else if (message.includes("not authorized")) {
+        toast.error("You are not authorized to update this order");
+      } else {
+        toast.error(message);
+      }
     } else {
       toast.success("Order status updated");
       setStatusDialogOpen(false);
