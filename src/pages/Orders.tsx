@@ -11,6 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import logoImage from "@/assets/farmerchain-logo.png";
 import { toast } from "sonner";
+import { ReviewForm } from "@/components/reviews/ReviewForm";
+import { StarRating } from "@/components/reviews/StarRating";
 
 const Orders = () => {
   const navigate = useNavigate();
@@ -20,6 +22,7 @@ const Orders = () => {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
   const [newStatus, setNewStatus] = useState("");
   const [statusNote, setStatusNote] = useState("");
 
@@ -138,74 +141,94 @@ const Orders = () => {
     return <Badge variant={variants[status] || "secondary"}>{status.replace(/_/g, " ")}</Badge>;
   };
 
-  const OrderCard = ({ order, isFarmer }: any) => (
-    <Card className="hover:shadow-lg transition-shadow">
-      <CardHeader>
-        <div className="flex justify-between items-start">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-2xl">{order.work_types?.icon}</span>
-              <CardTitle className="text-lg">{order.title}</CardTitle>
+  const OrderCard = ({ order, isFarmer }: any) => {
+    const canReview = order.status === "completed" || order.status === "accepted_finished";
+    const otherParty = isFarmer ? order.worker : order.farmer;
+    const revieweeId = isFarmer ? order.worker_id : order.farmer_id;
+    const ratingType = isFarmer ? "farmer_to_worker" : "worker_to_farmer";
+
+    return (
+      <Card className="hover:shadow-lg transition-shadow">
+        <CardHeader>
+          <div className="flex justify-between items-start">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-2xl">{order.work_types?.icon}</span>
+                <CardTitle className="text-lg">{order.title}</CardTitle>
+              </div>
+              <CardDescription>
+                {isFarmer
+                  ? `Worker: ${order.worker?.full_name}`
+                  : `Farmer: ${order.farmer?.full_name}`}
+              </CardDescription>
             </div>
-            <CardDescription>
-              {isFarmer
-                ? `Worker: ${order.worker?.full_name}`
-                : `Farmer: ${order.farmer?.full_name}`}
-            </CardDescription>
+            {getStatusBadge(order.status)}
           </div>
-          {getStatusBadge(order.status)}
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <p className="text-sm text-muted-foreground line-clamp-2">{order.description}</p>
-        <div className="grid grid-cols-2 gap-2 text-sm">
-          <div>
-            <span className="text-muted-foreground">Location:</span>
-            <p className="font-medium">{order.location_address}</p>
-          </div>
-          <div>
-            <span className="text-muted-foreground">Amount:</span>
-            <p className="font-medium text-primary text-lg">₹{order.agreed_amount}</p>
-          </div>
-          <div>
-            <span className="text-muted-foreground">Start Date:</span>
-            <p className="font-medium">{new Date(order.start_date).toLocaleDateString()}</p>
-          </div>
-          {order.estimated_hours && (
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-sm text-muted-foreground line-clamp-2">{order.description}</p>
+          <div className="grid grid-cols-2 gap-2 text-sm">
             <div>
-              <span className="text-muted-foreground">Est. Hours:</span>
-              <p className="font-medium">{order.estimated_hours}h</p>
+              <span className="text-muted-foreground">Location:</span>
+              <p className="font-medium">{order.location_address}</p>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Amount:</span>
+              <p className="font-medium text-primary text-lg">₹{order.agreed_amount}</p>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Start Date:</span>
+              <p className="font-medium">{new Date(order.start_date).toLocaleDateString()}</p>
+            </div>
+            {order.estimated_hours && (
+              <div>
+                <span className="text-muted-foreground">Est. Hours:</span>
+                <p className="font-medium">{order.estimated_hours}h</p>
+              </div>
+            )}
+          </div>
+          <div className="flex gap-2 mt-4">
+            <Button
+              size="sm"
+              variant="outline"
+              className="flex-1"
+              onClick={() => navigate(`/chat?user=${isFarmer ? order.worker_id : order.farmer_id}&order=${order.id}`)}
+            >
+              💬 Chat
+            </Button>
+            <Button
+              size="sm"
+              className="flex-1"
+              onClick={() => {
+                setSelectedOrder(order);
+                setStatusDialogOpen(true);
+              }}
+            >
+              Update Status
+            </Button>
+          </div>
+          {canReview && (
+            <Button
+              size="sm"
+              variant="secondary"
+              className="w-full"
+              onClick={() => {
+                setSelectedOrder({ ...order, revieweeId, otherPartyName: otherParty?.full_name, ratingType });
+                setReviewDialogOpen(true);
+              }}
+            >
+              ⭐ Leave Review
+            </Button>
+          )}
+          {order.notes && (
+            <div className="mt-2 p-2 bg-muted rounded text-sm">
+              <span className="text-muted-foreground">Notes:</span> {order.notes}
             </div>
           )}
-        </div>
-        <div className="flex gap-2 mt-4">
-          <Button
-            size="sm"
-            variant="outline"
-            className="flex-1"
-            onClick={() => navigate(`/chat?user=${isFarmer ? order.worker_id : order.farmer_id}&order=${order.id}`)}
-          >
-            💬 Chat
-          </Button>
-          <Button
-            size="sm"
-            className="flex-1"
-            onClick={() => {
-              setSelectedOrder(order);
-              setStatusDialogOpen(true);
-            }}
-          >
-            Update Status
-          </Button>
-        </div>
-        {order.notes && (
-          <div className="mt-2 p-2 bg-muted rounded text-sm">
-            <span className="text-muted-foreground">Notes:</span> {order.notes}
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
+        </CardContent>
+      </Card>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-secondary">
@@ -313,6 +336,31 @@ const Orders = () => {
               Update Status
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={reviewDialogOpen} onOpenChange={setReviewDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Leave a Review</DialogTitle>
+            <DialogDescription>
+              Share your experience for order: {selectedOrder?.title}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedOrder && (
+            <ReviewForm
+              orderId={selectedOrder.id}
+              revieweeId={selectedOrder.revieweeId}
+              revieweeName={selectedOrder.otherPartyName || "User"}
+              ratingType={selectedOrder.ratingType}
+              onSuccess={() => {
+                setReviewDialogOpen(false);
+                setSelectedOrder(null);
+                fetchOrders();
+              }}
+              onCancel={() => setReviewDialogOpen(false)}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </div>

@@ -8,7 +8,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Save, Star } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ReviewList } from "@/components/reviews/ReviewList";
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -302,7 +304,7 @@ export default function Profile() {
               <div className="space-y-2">
                 <Label>Your Rating</Label>
                 <div className="flex items-center gap-2">
-                  <span className="text-2xl">⭐</span>
+                  <Star className="h-6 w-6 fill-yellow-400 text-yellow-400" />
                   <span className="text-xl font-semibold">
                     {profile.average_rating.toFixed(1)}
                   </span>
@@ -319,6 +321,20 @@ export default function Profile() {
             </Button>
           </CardContent>
         </Card>
+
+        {profile && (
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Star className="h-5 w-5" />
+                Reviews
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ReviewList userId={profile.id} />
+            </CardContent>
+          </Card>
+        )}
       </main>
     </div>
   );
