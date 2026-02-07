@@ -13,8 +13,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Plus, Save, Trash2, Users, Briefcase, ShoppingCart, DollarSign, Settings } from "lucide-react";
+import { ArrowLeft, Plus, Save, Trash2, Users, Briefcase, ShoppingCart, DollarSign, Settings, Shield } from "lucide-react";
 import { AdminSettings } from "@/components/admin/AdminSettings";
+import { SecurityFindings } from "@/components/admin/SecurityFindings";
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -198,6 +199,10 @@ const Admin = () => {
               <Settings className="h-4 w-4" />
               Settings
             </TabsTrigger>
+            <TabsTrigger value="security" className="flex items-center gap-1">
+              <Shield className="h-4 w-4" />
+              Security
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="users">
@@ -379,6 +384,10 @@ const Admin = () => {
 
           <TabsContent value="settings">
             <AdminSettings />
+          </TabsContent>
+
+          <TabsContent value="security">
+            <SecurityFindings />
           </TabsContent>
         </Tabs>
       </main>
