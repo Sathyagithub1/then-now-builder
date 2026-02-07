@@ -335,6 +335,7 @@ export type Database = {
           id: string
           order_id: string
           rating: number
+          rating_type: string | null
           reviewee_id: string
           reviewer_id: string
           updated_at: string | null
@@ -345,6 +346,7 @@ export type Database = {
           id?: string
           order_id: string
           rating: number
+          rating_type?: string | null
           reviewee_id: string
           reviewer_id: string
           updated_at?: string | null
@@ -355,6 +357,7 @@ export type Database = {
           id?: string
           order_id?: string
           rating?: number
+          rating_type?: string | null
           reviewee_id?: string
           reviewer_id?: string
           updated_at?: string | null
@@ -501,6 +504,93 @@ export type Database = {
             columns: ["worker_id"]
             isOneToOne: false
             referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_transactions: {
+        Row: {
+          amount: number
+          commission_amount: number
+          commission_percentage: number
+          created_at: string | null
+          failure_reason: string | null
+          gateway_order_id: string | null
+          gateway_payment_id: string | null
+          gateway_signature: string | null
+          held_at: string | null
+          id: string
+          metadata: Json | null
+          net_amount: number
+          order_id: string
+          payer_id: string
+          payment_gateway: string
+          quote_id: string | null
+          receiver_id: string
+          refunded_at: string | null
+          released_at: string | null
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          commission_amount?: number
+          commission_percentage?: number
+          created_at?: string | null
+          failure_reason?: string | null
+          gateway_order_id?: string | null
+          gateway_payment_id?: string | null
+          gateway_signature?: string | null
+          held_at?: string | null
+          id?: string
+          metadata?: Json | null
+          net_amount: number
+          order_id: string
+          payer_id: string
+          payment_gateway: string
+          quote_id?: string | null
+          receiver_id: string
+          refunded_at?: string | null
+          released_at?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          commission_amount?: number
+          commission_percentage?: number
+          created_at?: string | null
+          failure_reason?: string | null
+          gateway_order_id?: string | null
+          gateway_payment_id?: string | null
+          gateway_signature?: string | null
+          held_at?: string | null
+          id?: string
+          metadata?: Json | null
+          net_amount?: number
+          order_id?: string
+          payer_id?: string
+          payment_gateway?: string
+          quote_id?: string | null
+          receiver_id?: string
+          refunded_at?: string | null
+          released_at?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_transactions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_transactions_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "worker_quotes"
             referencedColumns: ["id"]
           },
         ]
@@ -1069,6 +1159,7 @@ export type Database = {
       }
       work_types: {
         Row: {
+          commission_rate: number | null
           created_at: string | null
           description: string | null
           icon: string | null
@@ -1079,6 +1170,7 @@ export type Database = {
           work_crop_type_id: string | null
         }
         Insert: {
+          commission_rate?: number | null
           created_at?: string | null
           description?: string | null
           icon?: string | null
@@ -1089,6 +1181,7 @@ export type Database = {
           work_crop_type_id?: string | null
         }
         Update: {
+          commission_rate?: number | null
           created_at?: string | null
           description?: string | null
           icon?: string | null
@@ -1137,6 +1230,73 @@ export type Database = {
           worker_id?: string
         }
         Relationships: []
+      }
+      worker_quotes: {
+        Row: {
+          created_at: string | null
+          farmer_id: string
+          id: string
+          job_posting_id: string | null
+          message: string | null
+          order_id: string | null
+          proposed_amount: number
+          proposed_hours: number | null
+          status: string
+          updated_at: string | null
+          valid_until: string | null
+          worker_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          farmer_id: string
+          id?: string
+          job_posting_id?: string | null
+          message?: string | null
+          order_id?: string | null
+          proposed_amount: number
+          proposed_hours?: number | null
+          status?: string
+          updated_at?: string | null
+          valid_until?: string | null
+          worker_id: string
+        }
+        Update: {
+          created_at?: string | null
+          farmer_id?: string
+          id?: string
+          job_posting_id?: string | null
+          message?: string | null
+          order_id?: string | null
+          proposed_amount?: number
+          proposed_hours?: number | null
+          status?: string
+          updated_at?: string | null
+          valid_until?: string | null
+          worker_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "worker_quotes_job_posting_id_fkey"
+            columns: ["job_posting_id"]
+            isOneToOne: false
+            referencedRelation: "job_postings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "worker_quotes_job_posting_id_fkey"
+            columns: ["job_posting_id"]
+            isOneToOne: false
+            referencedRelation: "public_job_postings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "worker_quotes_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -1282,6 +1442,13 @@ export type Database = {
       }
     }
     Functions: {
+      calculate_payment_amounts: {
+        Args: { p_amount: number; p_commission_percentage: number }
+        Returns: {
+          commission_amount: number
+          net_amount: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["user_role"]
