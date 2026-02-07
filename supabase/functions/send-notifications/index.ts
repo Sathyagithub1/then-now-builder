@@ -2,7 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-cron-secret",
 };
 
 interface Notification {
@@ -16,23 +16,139 @@ interface Notification {
   metadata: Record<string, unknown>;
 }
 
-interface AppSetting {
-  key: string;
-  value: string | null;
+/**
+ * Validates the request is from an authorized source.
+ * Accepts either:
+ * 1. A valid cron secret in x-cron-secret header
+ * 2. A valid admin JWT token in Authorization header
+ */
+async function validateRequest(
+  req: Request,
+  supabase: ReturnType<typeof createClient>
+): Promise<{ authorized: boolean; error?: string }> {
+  // Check for cron secret (for scheduled invocations)
+  const cronSecret = req.headers.get("x-cron-secret");
+  const expectedCronSecret = Deno.env.get("NOTIFICATION_CRON_SECRET");
+  
+  if (cronSecret && expectedCronSecret && cronSecret === expectedCronSecret) {
+    return { authorized: true };
+  }
+  
+  // Check for admin JWT token (for manual invocations)
+  const authHeader = req.headers.get("Authorization");
+  if (authHeader?.startsWith("Bearer ")) {
+    const token = authHeader.replace("Bearer ", "");
+    
+    try {
+      const { data, error } = await supabase.auth.getUser(token);
+      
+      if (error || !data.user) {
+        return { authorized: false, error: "Invalid authentication token" };
+      }
+      
+      // Verify user is admin or super_admin
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", data.user.id);
+      
+      const isAdmin = roles?.some(
+        (r) => r.role === "admin" || r.role === "super_admin"
+      );
+      
+      if (isAdmin) {
+        return { authorized: true };
+      }
+      
+      return { authorized: false, error: "Admin access required" };
+    } catch {
+      return { authorized: false, error: "Authentication failed" };
+    }
+  }
+  
+  return { authorized: false, error: "Missing authentication" };
 }
 
-async function getAppSettings(supabase: ReturnType<typeof createClient>): Promise<Record<string, string | null>> {
-  const { data } = await supabase
+/**
+ * Get SMS credentials from Supabase secrets (environment variables).
+ * Falls back to database settings for backwards compatibility.
+ */
+async function getSMSCredentials(
+  supabase: ReturnType<typeof createClient>
+): Promise<{
+  smsEnabled: boolean;
+  smsProvider: string;
+  msg91AuthKey: string | null;
+  msg91SenderId: string;
+  msg91TemplateId: string | null;
+  twilioEnabled: boolean;
+  twilioAccountSid: string | null;
+  twilioAuthToken: string | null;
+  twilioPhoneNumber: string | null;
+}> {
+  // First, try to get credentials from Supabase secrets (more secure)
+  const msg91AuthKeyEnv = Deno.env.get("MSG91_AUTH_KEY");
+  const twilioAccountSidEnv = Deno.env.get("TWILIO_ACCOUNT_SID");
+  const twilioAuthTokenEnv = Deno.env.get("TWILIO_AUTH_TOKEN");
+  
+  // Get non-sensitive settings from database
+  const { data: settingsData } = await supabase
     .from("app_settings")
-    .select("key, value");
+    .select("key, value")
+    .in("key", [
+      "SMS_ENABLED",
+      "SMS_PROVIDER", 
+      "MSG91_SENDER_ID",
+      "MSG91_TEMPLATE_ID",
+      "TWILIO_ENABLED",
+      "TWILIO_PHONE_NUMBER",
+    ]);
   
   const settings: Record<string, string | null> = {};
-  if (data) {
-    for (const setting of data as AppSetting[]) {
+  if (settingsData) {
+    for (const setting of settingsData) {
       settings[setting.key] = setting.value;
     }
   }
-  return settings;
+  
+  // Use environment secrets if available, fallback to database
+  let msg91AuthKey = msg91AuthKeyEnv || null;
+  let twilioAccountSid = twilioAccountSidEnv || null;
+  let twilioAuthToken = twilioAuthTokenEnv || null;
+  
+  // If secrets not in environment, fall back to database (legacy support)
+  if (!msg91AuthKey || !twilioAccountSid) {
+    const { data: secretSettings } = await supabase
+      .from("app_settings")
+      .select("key, value")
+      .in("key", ["MSG91_AUTH_KEY", "TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN"]);
+    
+    if (secretSettings) {
+      for (const setting of secretSettings) {
+        if (setting.key === "MSG91_AUTH_KEY" && !msg91AuthKey) {
+          msg91AuthKey = setting.value;
+        }
+        if (setting.key === "TWILIO_ACCOUNT_SID" && !twilioAccountSid) {
+          twilioAccountSid = setting.value;
+        }
+        if (setting.key === "TWILIO_AUTH_TOKEN" && !twilioAuthToken) {
+          twilioAuthToken = setting.value;
+        }
+      }
+    }
+  }
+  
+  return {
+    smsEnabled: settings.SMS_ENABLED === "true",
+    smsProvider: settings.SMS_PROVIDER || "msg91",
+    msg91AuthKey,
+    msg91SenderId: settings.MSG91_SENDER_ID || "FARMCH",
+    msg91TemplateId: settings.MSG91_TEMPLATE_ID || null,
+    twilioEnabled: settings.TWILIO_ENABLED === "true",
+    twilioAccountSid,
+    twilioAuthToken,
+    twilioPhoneNumber: settings.TWILIO_PHONE_NUMBER || null,
+  };
 }
 
 async function sendMSG91SMS(
@@ -115,36 +231,58 @@ async function sendTwilioSMS(
   }
 }
 
+/**
+ * Log function invocation for audit purposes
+ */
+async function logInvocation(
+  supabase: ReturnType<typeof createClient>,
+  source: string,
+  status: string,
+  details: Record<string, unknown>
+): Promise<void> {
+  try {
+    await supabase.from("function_audit_logs").insert({
+      function_name: "send-notifications",
+      invocation_source: source,
+      status,
+      details,
+      invoked_at: new Date().toISOString(),
+    });
+  } catch {
+    // Audit logging should not fail the main operation
+    console.error("Failed to log invocation");
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    // Get settings from database
-    const settings = await getAppSettings(supabase);
+    // Validate authentication
+    const authResult = await validateRequest(req, supabase);
     
-    const smsEnabled = settings.SMS_ENABLED === "true";
-    const smsProvider = settings.SMS_PROVIDER || "msg91";
-    
-    // MSG91 settings
-    const msg91AuthKey = settings.MSG91_AUTH_KEY;
-    const msg91SenderId = settings.MSG91_SENDER_ID || "FARMCH";
-    const msg91TemplateId = settings.MSG91_TEMPLATE_ID;
-    
-    // Twilio settings
-    const twilioEnabled = settings.TWILIO_ENABLED === "true";
-    const twilioAccountSid = settings.TWILIO_ACCOUNT_SID;
-    const twilioAuthToken = settings.TWILIO_AUTH_TOKEN;
-    const twilioPhoneNumber = settings.TWILIO_PHONE_NUMBER;
+    if (!authResult.authorized) {
+      await logInvocation(supabase, "unauthorized", "rejected", { 
+        error: authResult.error,
+        ip: req.headers.get("x-forwarded-for") || "unknown"
+      });
+      
+      return new Response(
+        JSON.stringify({ error: authResult.error || "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
-    // Check if SMS is enabled
-    if (!smsEnabled) {
+    // Get SMS credentials (prefer secrets over database)
+    const credentials = await getSMSCredentials(supabase);
+    
+    if (!credentials.smsEnabled) {
       return new Response(
         JSON.stringify({ message: "SMS notifications are disabled" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -170,7 +308,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`Processing ${notifications.length} pending notifications via ${smsProvider}`);
+    console.log(`Processing ${notifications.length} pending notifications via ${credentials.smsProvider}`);
 
     const results: { id: string; success: boolean; error?: string }[] = [];
 
@@ -218,22 +356,28 @@ Deno.serve(async (req) => {
         // Send SMS based on provider preference
         let smsResult: { success: boolean; error?: string };
         
-        if (smsProvider === "twilio" && twilioEnabled && twilioAccountSid && twilioAuthToken && twilioPhoneNumber) {
+        if (
+          credentials.smsProvider === "twilio" && 
+          credentials.twilioEnabled && 
+          credentials.twilioAccountSid && 
+          credentials.twilioAuthToken && 
+          credentials.twilioPhoneNumber
+        ) {
           smsResult = await sendTwilioSMS(
             notification.phone_number,
             `${notification.title}: ${notification.message}`,
-            twilioAccountSid,
-            twilioAuthToken,
-            twilioPhoneNumber
+            credentials.twilioAccountSid,
+            credentials.twilioAuthToken,
+            credentials.twilioPhoneNumber
           );
-        } else if (msg91AuthKey) {
+        } else if (credentials.msg91AuthKey) {
           smsResult = await sendMSG91SMS(
             notification.phone_number,
             notification.title,
             notification.message,
-            msg91AuthKey,
-            msg91TemplateId,
-            msg91SenderId
+            credentials.msg91AuthKey,
+            credentials.msg91TemplateId,
+            credentials.msg91SenderId
           );
         } else {
           // No SMS provider configured - mark as logged
@@ -273,16 +417,25 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Log successful invocation
+    await logInvocation(supabase, "authorized", "success", { 
+      processed: results.length,
+      provider: credentials.smsProvider 
+    });
+
     return new Response(
       JSON.stringify({ 
         message: `Processed ${results.length} notifications`,
-        provider: smsProvider,
+        provider: credentials.smsProvider,
         results 
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    
+    await logInvocation(supabase, "unknown", "error", { error: errorMessage });
+    
     return new Response(
       JSON.stringify({ error: errorMessage }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
