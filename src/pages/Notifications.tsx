@@ -60,13 +60,13 @@ const Notifications = () => {
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
-      case "new_message": return <MessageSquare className="h-5 w-5 text-blue-500" />;
-      case "order_status": return <ShoppingCart className="h-5 w-5 text-green-500" />;
+      case "new_message": return <MessageSquare className="h-5 w-5 text-primary" />;
+      case "order_status": return <ShoppingCart className="h-5 w-5 text-primary" />;
       case "quote_received": 
-      case "quote_response": return <DollarSign className="h-5 w-5 text-yellow-500" />;
-      case "new_review": return <Star className="h-5 w-5 text-purple-500" />;
-      case "payment_update": return <DollarSign className="h-5 w-5 text-emerald-500" />;
-      default: return <Bell className="h-5 w-5 text-gray-500" />;
+      case "quote_response": return <DollarSign className="h-5 w-5 text-primary" />;
+      case "new_review": return <Star className="h-5 w-5 text-primary" />;
+      case "payment_update": return <DollarSign className="h-5 w-5 text-primary" />;
+      default: return <Bell className="h-5 w-5 text-muted-foreground" />;
     }
   };
 
