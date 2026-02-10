@@ -150,13 +150,13 @@ export const mockNotifications = [
   },
 ];
 
-// Mock app settings
+// Mock app settings (payment secrets are now managed via Cloud env vars, not stored in DB)
 export const mockAppSettings = [
   { id: "1", key: "MSG91_AUTH_KEY", value: "test-key", description: "MSG91 Auth Key", is_encrypted: true },
   { id: "2", key: "MSG91_SENDER_ID", value: "FARMCH", description: "MSG91 Sender ID", is_encrypted: false },
   { id: "3", key: "SMS_ENABLED", value: "true", description: "SMS Enabled", is_encrypted: false },
-  { id: "4", key: "RAZORPAY_KEY_ID", value: "rzp_test_123", description: "Razorpay Key", is_encrypted: false },
-  { id: "5", key: "STRIPE_PUBLISHABLE_KEY", value: "pk_test_123", description: "Stripe Key", is_encrypted: false },
+  { id: "4", key: "SMS_PROVIDER", value: "msg91", description: "SMS Provider", is_encrypted: false },
+  { id: "5", key: "COMMISSION_PERCENTAGE", value: "10", description: "Commission %", is_encrypted: false },
 ];
 
 // Mock work types

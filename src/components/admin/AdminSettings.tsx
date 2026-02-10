@@ -2,8 +2,10 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Shield, ExternalLink } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { SettingsCategory } from "./SettingsCategory";
 
 interface AppSetting {
@@ -13,6 +15,41 @@ interface AppSetting {
   description: string | null;
   is_encrypted: boolean;
 }
+
+const PaymentGatewayStatus = ({ title, icon, description, secretKeys }: {
+  title: string;
+  icon: string;
+  description: string;
+  secretKeys: string[];
+}) => (
+  <Card>
+    <CardHeader>
+      <CardTitle className="flex items-center justify-between">
+        <span>{icon} {title}</span>
+        <Badge variant="outline">
+          <Shield className="h-3 w-3 mr-1" /> Cloud Secrets
+        </Badge>
+      </CardTitle>
+      <CardDescription>{description}</CardDescription>
+    </CardHeader>
+    <CardContent className="space-y-3">
+      <p className="text-sm text-muted-foreground">
+        Payment gateway credentials are managed securely via Cloud environment variables.
+        They are <strong>never stored in the database</strong>.
+      </p>
+      <div className="text-sm">
+        <p className="font-medium mb-1">Required secrets:</p>
+        <ul className="list-disc ml-5 text-muted-foreground space-y-0.5">
+          {secretKeys.map(k => <li key={k}><code className="bg-muted px-1 rounded text-xs">{k}</code></li>)}
+        </ul>
+      </div>
+      <p className="text-xs text-muted-foreground flex items-center gap-1">
+        <ExternalLink className="h-3 w-3" />
+        Add these via Lovable Cloud → Secrets when ready to integrate.
+      </p>
+    </CardContent>
+  </Card>
+);
 
 export const AdminSettings = () => {
   const queryClient = useQueryClient();
@@ -77,20 +114,14 @@ export const AdminSettings = () => {
   };
 
   const getSettingsByCategory = () => {
-    if (!settings) return { msg91: [], twilio: [], razorpay: [], stripe: [], paypal: [], general: [] };
+    if (!settings) return { msg91: [], twilio: [], general: [] };
 
     return {
       msg91: settings.filter(s => s.key.startsWith("MSG91")),
       twilio: settings.filter(s => s.key.startsWith("TWILIO")),
-      razorpay: settings.filter(s => s.key.startsWith("RAZORPAY")),
-      stripe: settings.filter(s => s.key.startsWith("STRIPE")),
-      paypal: settings.filter(s => s.key.startsWith("PAYPAL")),
       general: settings.filter(s => 
         !s.key.startsWith("MSG91") && 
-        !s.key.startsWith("TWILIO") && 
-        !s.key.startsWith("RAZORPAY") &&
-        !s.key.startsWith("STRIPE") &&
-        !s.key.startsWith("PAYPAL")
+        !s.key.startsWith("TWILIO")
       )
     };
   };
@@ -107,7 +138,7 @@ export const AdminSettings = () => {
         <AlertTriangle className="h-4 w-4" />
         <AlertDescription>
           These settings are sensitive. Changes take effect immediately. 
-          Keep your API keys secure and never share them publicly.
+          Payment gateway secrets are managed via Cloud environment variables and are never stored in the database.
         </AlertDescription>
       </Alert>
 
@@ -137,43 +168,25 @@ export const AdminSettings = () => {
         isPending={updateSettingMutation.isPending}
       />
 
-      <SettingsCategory
-        title="Razorpay Configuration"
-        description="Configure Razorpay for Indian payments (UPI, cards, net banking)"
+      <PaymentGatewayStatus
+        title="Razorpay"
         icon="💳"
-        settings={categories.razorpay}
-        showSecrets={showSecrets}
-        editedValues={editedValues}
-        onToggleSecret={toggleShowSecret}
-        onValueChange={handleValueChange}
-        onSave={handleSave}
-        isPending={updateSettingMutation.isPending}
+        description="Indian payments (UPI, cards, net banking) — secrets managed via Cloud"
+        secretKeys={["RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET"]}
       />
 
-      <SettingsCategory
-        title="Stripe Configuration"
-        description="Configure Stripe for global card payments"
+      <PaymentGatewayStatus
+        title="Stripe"
         icon="💰"
-        settings={categories.stripe}
-        showSecrets={showSecrets}
-        editedValues={editedValues}
-        onToggleSecret={toggleShowSecret}
-        onValueChange={handleValueChange}
-        onSave={handleSave}
-        isPending={updateSettingMutation.isPending}
+        description="Global card payments — secrets managed via Cloud"
+        secretKeys={["STRIPE_PUBLISHABLE_KEY", "STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET"]}
       />
 
-      <SettingsCategory
-        title="PayPal Configuration"
-        description="Configure PayPal for international payments"
+      <PaymentGatewayStatus
+        title="PayPal"
         icon="🅿️"
-        settings={categories.paypal}
-        showSecrets={showSecrets}
-        editedValues={editedValues}
-        onToggleSecret={toggleShowSecret}
-        onValueChange={handleValueChange}
-        onSave={handleSave}
-        isPending={updateSettingMutation.isPending}
+        description="International payments — secrets managed via Cloud"
+        secretKeys={["PAYPAL_CLIENT_ID", "PAYPAL_CLIENT_SECRET"]}
       />
 
       <SettingsCategory
