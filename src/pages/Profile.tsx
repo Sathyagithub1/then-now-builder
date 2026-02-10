@@ -9,7 +9,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Save, Star } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ReviewList } from "@/components/reviews/ReviewList";
 
 export default function Profile() {
@@ -18,6 +17,7 @@ export default function Profile() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [profile, setProfile] = useState<any>(null);
+  const [sensitiveData, setSensitiveData] = useState<any>(null);
 
   useEffect(() => {
     fetchProfile();
@@ -31,14 +31,14 @@ export default function Profile() {
         return;
       }
 
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", session.user.id)
-        .single();
+      const [profileResult, sensitiveResult] = await Promise.all([
+        supabase.from("profiles").select("*").eq("id", session.user.id).single(),
+        supabase.from("profile_sensitive_data").select("*").eq("id", session.user.id).single(),
+      ]);
 
-      if (error) throw error;
-      setProfile(data);
+      if (profileResult.error) throw profileResult.error;
+      setProfile(profileResult.data);
+      setSensitiveData(sensitiveResult.data);
     } catch (error: any) {
       toast({
         title: "Error",
@@ -56,12 +56,9 @@ export default function Profile() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
-      const { error } = await supabase
-        .from("profiles")
-        .update({
+      const [profileUpdate, sensitiveUpdate] = await Promise.all([
+        supabase.from("profiles").update({
           full_name: profile.full_name,
-          mobile_number: profile.mobile_number,
-          email: profile.email,
           state: profile.state,
           district: profile.district,
           bio: profile.bio,
@@ -70,13 +67,15 @@ export default function Profile() {
           coordinates_lat: profile.coordinates_lat,
           coordinates_lng: profile.coordinates_lng,
           preferred_language: profile.preferred_language,
-          passport_number: profile.passport_number,
-          election_card_number: profile.election_card_number,
-          ration_card_number: profile.ration_card_number,
-        })
-        .eq("id", session.user.id);
+        }).eq("id", session.user.id),
+        supabase.from("profile_sensitive_data").update({
+          mobile_number: sensitiveData?.mobile_number,
+          email: sensitiveData?.email,
+        }).eq("id", session.user.id),
+      ]);
 
-      if (error) throw error;
+      if (profileUpdate.error) throw profileUpdate.error;
+      if (sensitiveUpdate.error) throw sensitiveUpdate.error;
 
       toast({
         title: "Success",
@@ -155,8 +154,8 @@ export default function Profile() {
               <Label htmlFor="mobile_number">Mobile Number</Label>
               <Input
                 id="mobile_number"
-                value={profile?.mobile_number || ""}
-                onChange={(e) => setProfile({ ...profile, mobile_number: e.target.value })}
+                value={sensitiveData?.mobile_number || ""}
+                onChange={(e) => setSensitiveData({ ...sensitiveData, mobile_number: e.target.value })}
               />
             </div>
 
@@ -165,8 +164,8 @@ export default function Profile() {
               <Input
                 id="email"
                 type="email"
-                value={profile?.email || ""}
-                onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+                value={sensitiveData?.email || ""}
+                onChange={(e) => setSensitiveData({ ...sensitiveData, email: e.target.value })}
                 placeholder="your.email@example.com"
               />
             </div>
@@ -254,37 +253,6 @@ export default function Profile() {
                 <option value="bn">Bengali</option>
                 <option value="mr">Marathi</option>
               </select>
-            </div>
-
-            <div className="space-y-4">
-              <h3 className="font-semibold">Additional ID Proofs (Optional)</h3>
-              <div className="space-y-2">
-                <Label htmlFor="passport_number">Passport Number</Label>
-                <Input
-                  id="passport_number"
-                  value={profile?.passport_number || ""}
-                  onChange={(e) => setProfile({ ...profile, passport_number: e.target.value })}
-                  placeholder="A1234567"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="election_card_number">Election Card Number</Label>
-                <Input
-                  id="election_card_number"
-                  value={profile?.election_card_number || ""}
-                  onChange={(e) => setProfile({ ...profile, election_card_number: e.target.value })}
-                  placeholder="ABC1234567"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="ration_card_number">Ration Card Number</Label>
-                <Input
-                  id="ration_card_number"
-                  value={profile?.ration_card_number || ""}
-                  onChange={(e) => setProfile({ ...profile, ration_card_number: e.target.value })}
-                  placeholder="123456789012"
-                />
-              </div>
             </div>
 
             <div className="space-y-2">

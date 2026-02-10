@@ -61,7 +61,7 @@ const Admin = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("*, user_roles(role)")
+        .select("*, user_roles(role), profile_sensitive_data(mobile_number, email)")
         .order("created_at", { ascending: false });
       return data || [];
     },
@@ -226,7 +226,7 @@ const Admin = () => {
                     {users?.map((user) => (
                       <TableRow key={user.id}>
                         <TableCell>{user.full_name}</TableCell>
-                        <TableCell>{user.mobile_number}</TableCell>
+                        <TableCell>{(user as any).profile_sensitive_data?.mobile_number || "N/A"}</TableCell>
                         <TableCell>{user.district}, {user.state}</TableCell>
                         <TableCell>
                           <Badge variant="outline">
