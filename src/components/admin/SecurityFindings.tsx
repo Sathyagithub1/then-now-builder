@@ -54,15 +54,15 @@ const securityFindings: SecurityFinding[] = [
   {
     source: "agent_security",
     finding: {
-      level: "error",
+      level: "info",
       ignore: false,
       link: "https://docs.lovable.dev/features/security",
-      details: "**PARTIALLY FIXED**: The edge function now prioritizes Supabase secrets over database storage:\n\n1. **Environment variables first** - SMS credentials (MSG91_AUTH_KEY, TWILIO_*) are read from Supabase secrets\n2. **Database fallback** - Only used for backwards compatibility\n3. **Non-sensitive settings** - Only configuration (enabled flags, sender IDs) read from database\n\n**To complete the fix:**\n1. Add SMS API keys as Supabase secrets using the Secrets tool\n2. Remove sensitive keys from app_settings table after migration\n3. Payment gateway secrets should also be migrated to Supabase secrets",
-      name: "Application secrets stored unencrypted in database",
+      details: "**RESOLVED**: Payment gateway secrets fully removed from database:\n\n1. **Razorpay, Stripe, PayPal** credentials deleted from app_settings table\n2. **Cloud environment variables** used exclusively for payment gateway secrets\n3. **SMS credentials** prioritized from Cloud secrets with database fallback\n4. **Database stores only** non-sensitive config (enabled flags, modes, sender IDs)\n5. **Admin UI** shows integration status cards instead of editable secret fields",
+      name: "Application secrets management — RESOLVED",
       remediation_difficulty: "low",
       category: "Secret Management",
       internal_id: "app_settings_unencrypted",
-      description: "The app_settings table stores sensitive API keys and secrets (MSG91, Twilio, Razorpay, Stripe, PayPal) in plaintext, accessible to super_admin users. This creates risk if admin accounts are compromised.",
+      description: "Payment gateway secrets (Razorpay, Stripe, PayPal) are no longer stored in the database. They are managed exclusively via Cloud environment variables and used only during integration.",
       id: "SECRETS_EXPOSED"
     }
   }

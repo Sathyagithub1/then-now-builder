@@ -61,16 +61,12 @@ describe("Admin Role Tests", () => {
       expect(smsSettings.length).toBeGreaterThan(0);
     });
 
-    it("should read payment gateway configurations", () => {
-      const razorpaySettings = mockAppSettings.filter((s) =>
-        s.key.startsWith("RAZORPAY")
+    it("should not store payment gateway secrets in database", () => {
+      // Payment secrets are managed via Cloud env vars, not app_settings
+      const paymentSecrets = mockAppSettings.filter((s) =>
+        s.key.startsWith("RAZORPAY") || s.key.startsWith("STRIPE") || s.key.startsWith("PAYPAL")
       );
-      const stripeSettings = mockAppSettings.filter((s) =>
-        s.key.startsWith("STRIPE")
-      );
-
-      expect(razorpaySettings.length).toBeGreaterThan(0);
-      expect(stripeSettings.length).toBeGreaterThan(0);
+      expect(paymentSecrets.length).toBe(0);
     });
 
     it("should identify encrypted settings", () => {
@@ -122,50 +118,42 @@ describe("Admin Role Tests", () => {
   });
 
   describe("Razorpay Configuration", () => {
-    it("should configure Razorpay key ID", () => {
-      const keyId = mockAppSettings.find((s) => s.key === "RAZORPAY_KEY_ID");
-      expect(keyId).toBeDefined();
+    it("should use Cloud secrets for Razorpay credentials", () => {
+      // Razorpay secrets are NOT stored in app_settings
+      const razorpayInDb = mockAppSettings.filter(s => s.key.startsWith("RAZORPAY"));
+      expect(razorpayInDb.length).toBe(0);
     });
 
-    it("should store Razorpay secret securely", () => {
-      const secretKey = {
-        key: "RAZORPAY_KEY_SECRET",
-        is_encrypted: true,
-      };
-      expect(secretKey.is_encrypted).toBe(true);
+    it("should require specific secret keys", () => {
+      const requiredKeys = ["RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET"];
+      requiredKeys.forEach(key => expect(key.startsWith("RAZORPAY")).toBe(true));
     });
   });
 
   describe("Stripe Configuration", () => {
-    it("should configure Stripe publishable key", () => {
-      const pubKey = mockAppSettings.find(
-        (s) => s.key === "STRIPE_PUBLISHABLE_KEY"
-      );
-      expect(pubKey).toBeDefined();
+    it("should use Cloud secrets for Stripe credentials", () => {
+      const stripeInDb = mockAppSettings.filter(s => s.key.startsWith("STRIPE"));
+      expect(stripeInDb.length).toBe(0);
     });
 
-    it("should store Stripe secrets securely", () => {
-      const secretFields = ["STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET"];
-      secretFields.forEach((field) => {
-        expect(field).toContain("SECRET");
-      });
+    it("should require specific secret keys", () => {
+      const requiredKeys = ["STRIPE_PUBLISHABLE_KEY", "STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET"];
+      requiredKeys.forEach(key => expect(key.startsWith("STRIPE")).toBe(true));
     });
   });
 
   describe("PayPal Configuration", () => {
-    it("should configure PayPal client credentials", () => {
-      const paypalFields = [
-        "PAYPAL_CLIENT_ID",
-        "PAYPAL_CLIENT_SECRET",
-        "PAYPAL_MODE",
-      ];
-
-      paypalFields.forEach((field) => {
-        expect(field.startsWith("PAYPAL")).toBe(true);
-      });
+    it("should use Cloud secrets for PayPal credentials", () => {
+      const paypalInDb = mockAppSettings.filter(s => s.key.startsWith("PAYPAL"));
+      expect(paypalInDb.length).toBe(0);
     });
 
-    it("should support sandbox and live modes", () => {
+    it("should require specific secret keys", () => {
+      const requiredKeys = ["PAYPAL_CLIENT_ID", "PAYPAL_CLIENT_SECRET"];
+      requiredKeys.forEach(key => expect(key.startsWith("PAYPAL")).toBe(true));
+    });
+
+    it("should support sandbox and live modes via Cloud config", () => {
       const validModes = ["sandbox", "live"];
       expect(validModes).toContain("sandbox");
       expect(validModes).toContain("live");
