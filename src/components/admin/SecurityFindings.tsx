@@ -24,15 +24,15 @@ const securityFindings: SecurityFinding[] = [
   {
     source: "agent_security",
     finding: {
-      description: "The profiles table contains highly sensitive PII including mobile numbers, email addresses, government ID numbers (Aadhaar, passport, election card, ration card), and complete banking details (account number, IFSC code, holder name, UPI ID). While RLS restricts users to viewing only their own profiles, any authentication compromise could expose complete financial and identity information.",
+      description: "Sensitive PII (email, mobile number) has been moved to a dedicated profile_sensitive_data table with strict RLS. Banking details, government IDs, and unnecessary fields have been completely removed from the database.",
       internal_id: "profiles_pii_exposure",
       id: "PUBLIC_DATA_EXPOSURE",
-      level: "error",
+      level: "info",
       ignore: false,
-      remediation_difficulty: "medium",
-      details: "**MITIGATED**: Added audit logging and data separation:\n\n1. **Audit logging tables** - `profile_access_logs` tracks who accessed sensitive profile data\n2. **Sensitive data view** - `profile_sensitive_data` view isolates sensitive fields\n3. **Function for logging** - `log_profile_access()` function for explicit audit trails\n4. **Admin audit logs** - `function_audit_logs` table for edge function monitoring\n\n**Remaining recommendations:**\n- Implement field-level encryption for bank account and government ID fields\n- Consider MFA for accessing financial information\n- The core RLS policy remains unchanged (users can only view their own data)",
+      remediation_difficulty: "low",
+      details: "**RESOLVED**: Complete schema cleanup performed:\n\n1. **Removed banking fields** - bank_account_number, bank_ifsc_code, bank_account_holder_name, upi_id dropped\n2. **Removed gov ID fields** - passport_number, election_card_number, ration_card_number, gov_id_number, gov_id_type dropped\n3. **Separated sensitive data** - email and mobile_number moved to profile_sensitive_data table\n4. **Strict RLS** - Users can only access their own sensitive data; admins have read access for support\n5. **Trigger updates** - All notification triggers updated to read from the new table",
       category: "Sensitive Data",
-      name: "Profile table exposes highly sensitive personal information",
+      name: "Profile PII exposure — RESOLVED",
       link: "https://docs.lovable.dev/features/security"
     }
   },
