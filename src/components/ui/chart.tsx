@@ -89,6 +89,121 @@ ${colorConfig
 
 const ChartTooltip = RechartsPrimitive.Tooltip;
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type ChartTooltipPayloadItem = any;
+
+function ChartTooltipIndicator({
+  indicator,
+  nestLabel,
+  indicatorColor,
+}: {
+  indicator: "line" | "dot" | "dashed";
+  nestLabel: boolean;
+  indicatorColor: string | undefined;
+}) {
+  return (
+    <div
+      className={cn("shrink-0 rounded-[2px] border-[--color-border] bg-[--color-bg]", {
+        "h-2.5 w-2.5": indicator === "dot",
+        "w-1": indicator === "line",
+        "w-0 border-[1.5px] border-dashed bg-transparent": indicator === "dashed",
+        "my-0.5": nestLabel && indicator === "dashed",
+      })}
+      style={
+        {
+          "--color-bg": indicatorColor,
+          "--color-border": indicatorColor,
+        } as React.CSSProperties
+      }
+    />
+  );
+}
+
+function ChartTooltipItemBody({
+  item,
+  itemConfig,
+  nestLabel,
+  tooltipLabel,
+}: {
+  item: ChartTooltipPayloadItem;
+  itemConfig: ReturnType<typeof getPayloadConfigFromPayload>;
+  nestLabel: boolean;
+  tooltipLabel: React.ReactNode;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex flex-1 justify-between leading-none",
+        nestLabel ? "items-end" : "items-center",
+      )}
+    >
+      <div className="grid gap-1.5">
+        {nestLabel ? tooltipLabel : null}
+        <span className="text-muted-foreground">{itemConfig?.label || item.name}</span>
+      </div>
+      {item.value && (
+        <span className="font-mono font-medium tabular-nums text-foreground">
+          {item.value.toLocaleString()}
+        </span>
+      )}
+    </div>
+  );
+}
+
+function ChartTooltipItem({
+  item,
+  index,
+  config,
+  indicator,
+  hideIndicator,
+  nestLabel,
+  nameKey,
+  color,
+  formatter,
+  tooltipLabel,
+}: {
+  item: ChartTooltipPayloadItem;
+  index: number;
+  config: ChartConfig;
+  indicator: "line" | "dot" | "dashed";
+  hideIndicator: boolean;
+  nestLabel: boolean;
+  nameKey?: string;
+  color?: string;
+  formatter?: RechartsPrimitive.TooltipProps<number, string>["formatter"];
+  tooltipLabel: React.ReactNode;
+}) {
+  const key = `${nameKey || item.name || item.dataKey || "value"}`;
+  const itemConfig = getPayloadConfigFromPayload(config, item, key);
+  const indicatorColor = color || item.payload.fill || item.color;
+
+  if (formatter && item?.value !== undefined && item.name) {
+    return formatter(item.value, item.name, item, index, item.payload);
+  }
+
+  return (
+    <>
+      {itemConfig?.icon ? (
+        <itemConfig.icon />
+      ) : (
+        !hideIndicator && (
+          <ChartTooltipIndicator
+            indicator={indicator}
+            nestLabel={nestLabel}
+            indicatorColor={indicatorColor}
+          />
+        )
+      )}
+      <ChartTooltipItemBody
+        item={item}
+        itemConfig={itemConfig}
+        nestLabel={nestLabel}
+        tooltipLabel={tooltipLabel}
+      />
+    </>
+  );
+}
+
 const ChartTooltipContent = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<typeof RechartsPrimitive.Tooltip> &
@@ -160,64 +275,28 @@ const ChartTooltipContent = React.forwardRef<
       >
         {!nestLabel ? tooltipLabel : null}
         <div className="grid gap-1.5">
-          {payload.map((item, index) => {
-            const key = `${nameKey || item.name || item.dataKey || "value"}`;
-            const itemConfig = getPayloadConfigFromPayload(config, item, key);
-            const indicatorColor = color || item.payload.fill || item.color;
-
-            return (
-              <div
-                key={item.dataKey}
-                className={cn(
-                  "flex w-full flex-wrap items-stretch gap-2 [&>svg]:h-2.5 [&>svg]:w-2.5 [&>svg]:text-muted-foreground",
-                  indicator === "dot" && "items-center",
-                )}
-              >
-                {formatter && item?.value !== undefined && item.name ? (
-                  formatter(item.value, item.name, item, index, item.payload)
-                ) : (
-                  <>
-                    {itemConfig?.icon ? (
-                      <itemConfig.icon />
-                    ) : (
-                      !hideIndicator && (
-                        <div
-                          className={cn("shrink-0 rounded-[2px] border-[--color-border] bg-[--color-bg]", {
-                            "h-2.5 w-2.5": indicator === "dot",
-                            "w-1": indicator === "line",
-                            "w-0 border-[1.5px] border-dashed bg-transparent": indicator === "dashed",
-                            "my-0.5": nestLabel && indicator === "dashed",
-                          })}
-                          style={
-                            {
-                              "--color-bg": indicatorColor,
-                              "--color-border": indicatorColor,
-                            } as React.CSSProperties
-                          }
-                        />
-                      )
-                    )}
-                    <div
-                      className={cn(
-                        "flex flex-1 justify-between leading-none",
-                        nestLabel ? "items-end" : "items-center",
-                      )}
-                    >
-                      <div className="grid gap-1.5">
-                        {nestLabel ? tooltipLabel : null}
-                        <span className="text-muted-foreground">{itemConfig?.label || item.name}</span>
-                      </div>
-                      {item.value && (
-                        <span className="font-mono font-medium tabular-nums text-foreground">
-                          {item.value.toLocaleString()}
-                        </span>
-                      )}
-                    </div>
-                  </>
-                )}
-              </div>
-            );
-          })}
+          {payload.map((item, index) => (
+            <div
+              key={item.dataKey}
+              className={cn(
+                "flex w-full flex-wrap items-stretch gap-2 [&>svg]:h-2.5 [&>svg]:w-2.5 [&>svg]:text-muted-foreground",
+                indicator === "dot" && "items-center",
+              )}
+            >
+              <ChartTooltipItem
+                item={item}
+                index={index}
+                config={config}
+                indicator={indicator}
+                hideIndicator={hideIndicator}
+                nestLabel={nestLabel}
+                nameKey={nameKey}
+                color={color}
+                formatter={formatter}
+                tooltipLabel={tooltipLabel}
+              />
+            </div>
+          ))}
         </div>
       </div>
     );
