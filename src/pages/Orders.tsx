@@ -14,6 +14,31 @@ import { toast } from "sonner";
 import { ReviewForm } from "@/components/reviews/ReviewForm";
 import { StarRating } from "@/components/reviews/StarRating";
 
+// Build the order update payload for a given status/note.
+function buildStatusUpdateData(newStatus: string, statusNote: string): Record<string, unknown> {
+  const updateData: Record<string, unknown> = { status: newStatus };
+  if (statusNote) {
+    if (newStatus === "canceled") updateData.cancellation_reason = statusNote;
+    if (newStatus === "dispute") updateData.dispute_reason = statusNote;
+    if (!updateData.notes) updateData.notes = statusNote;
+  }
+  return updateData;
+}
+
+// Maps a server error substring to a user-friendly message.
+const STATUS_UPDATE_ERROR_MESSAGES: { match: string; message: string }[] = [
+  { match: "Only the farmer can mark", message: "Only the farmer can mark this order as completed" },
+  { match: "Cannot change a completed order", message: "Cannot modify a completed order (except to raise a dispute)" },
+  { match: "Cannot modify a canceled order", message: "Canceled orders cannot be modified" },
+  { match: "not authorized", message: "You are not authorized to update this order" },
+];
+
+function resolveStatusUpdateError(rawMessage: string | undefined): string {
+  const message = rawMessage || "Error updating order";
+  const mapped = STATUS_UPDATE_ERROR_MESSAGES.find((entry) => message.includes(entry.match));
+  return mapped ? mapped.message : message;
+}
+
 const Orders = () => {
   const navigate = useNavigate();
   const [myOrders, setMyOrders] = useState<any[]>([]);
@@ -80,18 +105,13 @@ const Orders = () => {
 
     // Client-side validation for better UX (server also validates)
     if ((newStatus === "canceled" || newStatus === "dispute") && !statusNote.trim()) {
-      toast.error(newStatus === "canceled" 
-        ? "Please provide a cancellation reason" 
+      toast.error(newStatus === "canceled"
+        ? "Please provide a cancellation reason"
         : "Please provide a dispute reason");
       return;
     }
 
-    const updateData: any = { status: newStatus };
-    if (statusNote) {
-      if (newStatus === "canceled") updateData.cancellation_reason = statusNote;
-      if (newStatus === "dispute") updateData.dispute_reason = statusNote;
-      if (!updateData.notes) updateData.notes = statusNote;
-    }
+    const updateData = buildStatusUpdateData(newStatus, statusNote);
 
     const { error } = await supabase
       .from("orders")
@@ -100,18 +120,7 @@ const Orders = () => {
 
     if (error) {
       // Display meaningful server validation errors
-      const message = error.message || "Error updating order";
-      if (message.includes("Only the farmer can mark")) {
-        toast.error("Only the farmer can mark this order as completed");
-      } else if (message.includes("Cannot change a completed order")) {
-        toast.error("Cannot modify a completed order (except to raise a dispute)");
-      } else if (message.includes("Cannot modify a canceled order")) {
-        toast.error("Canceled orders cannot be modified");
-      } else if (message.includes("not authorized")) {
-        toast.error("You are not authorized to update this order");
-      } else {
-        toast.error(message);
-      }
+      toast.error(resolveStatusUpdateError(error.message));
     } else {
       toast.success("Order status updated");
       setStatusDialogOpen(false);
