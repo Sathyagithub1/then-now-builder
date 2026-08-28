@@ -70,6 +70,62 @@ async function validateRequest(
 }
 
 /**
+ * Fetch the given app_settings keys and return them as a plain key/value map.
+ */
+async function fetchAppSettings(
+  supabase: ReturnType<typeof createClient>,
+  keys: string[]
+): Promise<Record<string, string | null>> {
+  const { data } = await supabase
+    .from("app_settings")
+    .select("key, value")
+    .in("key", keys);
+
+  const result: Record<string, string | null> = {};
+  if (data) {
+    for (const setting of data) {
+      result[setting.key] = setting.value;
+    }
+  }
+  return result;
+}
+
+/**
+ * Fetch legacy SMS secret values from the app_settings table, keyed by setting name.
+ */
+function fetchSecretSettings(
+  supabase: ReturnType<typeof createClient>
+): Promise<Record<string, string | null>> {
+  return fetchAppSettings(supabase, [
+    "MSG91_AUTH_KEY",
+    "TWILIO_ACCOUNT_SID",
+    "TWILIO_AUTH_TOKEN",
+  ]);
+}
+
+/**
+ * Resolve the sensitive SMS credentials, preferring Supabase secrets (env vars)
+ * and falling back to legacy values stored in app_settings.
+ */
+async function resolveSecretCredentials(
+  supabase: ReturnType<typeof createClient>
+): Promise<{ msg91AuthKey: string | null; twilioAccountSid: string | null; twilioAuthToken: string | null }> {
+  let msg91AuthKey = Deno.env.get("MSG91_AUTH_KEY") || null;
+  let twilioAccountSid = Deno.env.get("TWILIO_ACCOUNT_SID") || null;
+  let twilioAuthToken = Deno.env.get("TWILIO_AUTH_TOKEN") || null;
+
+  // If secrets not in environment, fall back to database (legacy support)
+  if (!msg91AuthKey || !twilioAccountSid) {
+    const secretSettings = await fetchSecretSettings(supabase);
+    msg91AuthKey = msg91AuthKey || secretSettings.MSG91_AUTH_KEY || null;
+    twilioAccountSid = twilioAccountSid || secretSettings.TWILIO_ACCOUNT_SID || null;
+    twilioAuthToken = twilioAuthToken || secretSettings.TWILIO_AUTH_TOKEN || null;
+  }
+
+  return { msg91AuthKey, twilioAccountSid, twilioAuthToken };
+}
+
+/**
  * Get SMS credentials from Supabase secrets (environment variables).
  * Falls back to database settings for backwards compatibility.
  */
@@ -86,58 +142,20 @@ async function getSMSCredentials(
   twilioAuthToken: string | null;
   twilioPhoneNumber: string | null;
 }> {
-  // First, try to get credentials from Supabase secrets (more secure)
-  const msg91AuthKeyEnv = Deno.env.get("MSG91_AUTH_KEY");
-  const twilioAccountSidEnv = Deno.env.get("TWILIO_ACCOUNT_SID");
-  const twilioAuthTokenEnv = Deno.env.get("TWILIO_AUTH_TOKEN");
-  
   // Get non-sensitive settings from database
-  const { data: settingsData } = await supabase
-    .from("app_settings")
-    .select("key, value")
-    .in("key", [
-      "SMS_ENABLED",
-      "SMS_PROVIDER", 
-      "MSG91_SENDER_ID",
-      "MSG91_TEMPLATE_ID",
-      "TWILIO_ENABLED",
-      "TWILIO_PHONE_NUMBER",
-    ]);
-  
-  const settings: Record<string, string | null> = {};
-  if (settingsData) {
-    for (const setting of settingsData) {
-      settings[setting.key] = setting.value;
-    }
-  }
-  
-  // Use environment secrets if available, fallback to database
-  let msg91AuthKey = msg91AuthKeyEnv || null;
-  let twilioAccountSid = twilioAccountSidEnv || null;
-  let twilioAuthToken = twilioAuthTokenEnv || null;
-  
-  // If secrets not in environment, fall back to database (legacy support)
-  if (!msg91AuthKey || !twilioAccountSid) {
-    const { data: secretSettings } = await supabase
-      .from("app_settings")
-      .select("key, value")
-      .in("key", ["MSG91_AUTH_KEY", "TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN"]);
-    
-    if (secretSettings) {
-      for (const setting of secretSettings) {
-        if (setting.key === "MSG91_AUTH_KEY" && !msg91AuthKey) {
-          msg91AuthKey = setting.value;
-        }
-        if (setting.key === "TWILIO_ACCOUNT_SID" && !twilioAccountSid) {
-          twilioAccountSid = setting.value;
-        }
-        if (setting.key === "TWILIO_AUTH_TOKEN" && !twilioAuthToken) {
-          twilioAuthToken = setting.value;
-        }
-      }
-    }
-  }
-  
+  const settings = await fetchAppSettings(supabase, [
+    "SMS_ENABLED",
+    "SMS_PROVIDER",
+    "MSG91_SENDER_ID",
+    "MSG91_TEMPLATE_ID",
+    "TWILIO_ENABLED",
+    "TWILIO_PHONE_NUMBER",
+  ]);
+
+  // Resolve sensitive credentials (env secrets preferred, DB fallback)
+  const { msg91AuthKey, twilioAccountSid, twilioAuthToken } =
+    await resolveSecretCredentials(supabase);
+
   return {
     smsEnabled: settings.SMS_ENABLED === "true",
     smsProvider: settings.SMS_PROVIDER || "msg91",
@@ -254,6 +272,146 @@ async function logInvocation(
   }
 }
 
+// Maps a notification type to the notification_settings field that gates it.
+const NOTIFICATION_TYPE_SETTING: Record<string, string> = {
+  new_message: "new_message",
+  order_status: "order_status_change",
+  quote_received: "quote_received",
+  quote_response: "quote_response",
+  new_review: "new_review",
+  payment_update: "payment_updates",
+};
+
+/**
+ * Decide whether an SMS should be sent for a notification, based on the
+ * user's notification_settings. When no settings row exists, default to sending.
+ */
+function shouldSendNotification(
+  notification: Notification,
+  userSettings: Record<string, unknown> | null
+): boolean {
+  if (!userSettings) return true;
+  if (!userSettings.sms_enabled) return false;
+
+  const settingKey = NOTIFICATION_TYPE_SETTING[notification.type];
+  if (settingKey && !userSettings[settingKey]) return false;
+
+  return true;
+}
+
+/**
+ * Send an SMS for a notification using the configured provider.
+ * Returns null when no provider is configured (caller marks it "logged").
+ */
+async function dispatchSMS(
+  notification: Notification,
+  credentials: Awaited<ReturnType<typeof getSMSCredentials>>
+): Promise<{ success: boolean; error?: string } | null> {
+  const useTwilio =
+    credentials.smsProvider === "twilio" &&
+    credentials.twilioEnabled &&
+    credentials.twilioAccountSid &&
+    credentials.twilioAuthToken &&
+    credentials.twilioPhoneNumber;
+
+  if (useTwilio) {
+    return await sendTwilioSMS(
+      notification.phone_number,
+      `${notification.title}: ${notification.message}`,
+      credentials.twilioAccountSid!,
+      credentials.twilioAuthToken!,
+      credentials.twilioPhoneNumber!
+    );
+  }
+
+  if (credentials.msg91AuthKey) {
+    return await sendMSG91SMS(
+      notification.phone_number,
+      notification.title,
+      notification.message,
+      credentials.msg91AuthKey,
+      credentials.msg91TemplateId,
+      credentials.msg91SenderId
+    );
+  }
+
+  return null;
+}
+
+/**
+ * Process a single pending notification: check preferences, send the SMS,
+ * and update the notification row. Returns the per-notification result.
+ */
+async function processNotification(
+  supabase: ReturnType<typeof createClient>,
+  notification: Notification,
+  credentials: Awaited<ReturnType<typeof getSMSCredentials>>
+): Promise<{ id: string; success: boolean; error?: string }> {
+  try {
+    // Check user's notification preferences
+    const { data: userSettings } = await supabase
+      .from("notification_settings")
+      .select("*")
+      .eq("user_id", notification.user_id)
+      .single();
+
+    if (!shouldSendNotification(notification, userSettings)) {
+      await supabase
+        .from("notifications")
+        .update({ status: "skipped", sent_at: new Date().toISOString() })
+        .eq("id", notification.id);
+
+      return { id: notification.id, success: true, error: "User disabled this notification type" };
+    }
+
+    if (!notification.phone_number) {
+      await supabase
+        .from("notifications")
+        .update({ status: "failed", error_message: "Missing phone number", sent_at: new Date().toISOString() })
+        .eq("id", notification.id);
+
+      return { id: notification.id, success: false, error: "Missing phone number" };
+    }
+
+    const smsResult = await dispatchSMS(notification, credentials);
+
+    if (smsResult === null) {
+      // No SMS provider configured - mark as logged
+      await supabase
+        .from("notifications")
+        .update({ status: "logged", sent_at: new Date().toISOString(), error_message: "No SMS provider configured" })
+        .eq("id", notification.id);
+
+      return { id: notification.id, success: true, error: "No SMS provider configured" };
+    }
+
+    if (smsResult.success) {
+      await supabase
+        .from("notifications")
+        .update({ status: "sent", sent_at: new Date().toISOString() })
+        .eq("id", notification.id);
+
+      return { id: notification.id, success: true };
+    }
+
+    await supabase
+      .from("notifications")
+      .update({ status: "failed", error_message: smsResult.error, sent_at: new Date().toISOString() })
+      .eq("id", notification.id);
+
+    return { id: notification.id, success: false, error: smsResult.error };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+
+    await supabase
+      .from("notifications")
+      .update({ status: "failed", error_message: errorMessage, sent_at: new Date().toISOString() })
+      .eq("id", notification.id);
+
+    return { id: notification.id, success: false, error: errorMessage };
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -313,108 +471,8 @@ Deno.serve(async (req) => {
     const results: { id: string; success: boolean; error?: string }[] = [];
 
     for (const notification of notifications as Notification[]) {
-      try {
-        // Check user's notification preferences
-        const { data: userSettings } = await supabase
-          .from("notification_settings")
-          .select("*")
-          .eq("user_id", notification.user_id)
-          .single();
-
-        // Check if this notification type is enabled
-        let shouldSend = true;
-        if (userSettings) {
-          if (!userSettings.sms_enabled) shouldSend = false;
-          if (notification.type === "new_message" && !userSettings.new_message) shouldSend = false;
-          if (notification.type === "order_status" && !userSettings.order_status_change) shouldSend = false;
-          if (notification.type === "quote_received" && !userSettings.quote_received) shouldSend = false;
-          if (notification.type === "quote_response" && !userSettings.quote_response) shouldSend = false;
-          if (notification.type === "new_review" && !userSettings.new_review) shouldSend = false;
-          if (notification.type === "payment_update" && !userSettings.payment_updates) shouldSend = false;
-        }
-
-        if (!shouldSend) {
-          await supabase
-            .from("notifications")
-            .update({ status: "skipped", sent_at: new Date().toISOString() })
-            .eq("id", notification.id);
-          
-          results.push({ id: notification.id, success: true, error: "User disabled this notification type" });
-          continue;
-        }
-
-        if (!notification.phone_number) {
-          await supabase
-            .from("notifications")
-            .update({ status: "failed", error_message: "Missing phone number", sent_at: new Date().toISOString() })
-            .eq("id", notification.id);
-          
-          results.push({ id: notification.id, success: false, error: "Missing phone number" });
-          continue;
-        }
-
-        // Send SMS based on provider preference
-        let smsResult: { success: boolean; error?: string };
-        
-        if (
-          credentials.smsProvider === "twilio" && 
-          credentials.twilioEnabled && 
-          credentials.twilioAccountSid && 
-          credentials.twilioAuthToken && 
-          credentials.twilioPhoneNumber
-        ) {
-          smsResult = await sendTwilioSMS(
-            notification.phone_number,
-            `${notification.title}: ${notification.message}`,
-            credentials.twilioAccountSid,
-            credentials.twilioAuthToken,
-            credentials.twilioPhoneNumber
-          );
-        } else if (credentials.msg91AuthKey) {
-          smsResult = await sendMSG91SMS(
-            notification.phone_number,
-            notification.title,
-            notification.message,
-            credentials.msg91AuthKey,
-            credentials.msg91TemplateId,
-            credentials.msg91SenderId
-          );
-        } else {
-          // No SMS provider configured - mark as logged
-          await supabase
-            .from("notifications")
-            .update({ status: "logged", sent_at: new Date().toISOString(), error_message: "No SMS provider configured" })
-            .eq("id", notification.id);
-          
-          results.push({ id: notification.id, success: true, error: "No SMS provider configured" });
-          continue;
-        }
-
-        if (smsResult.success) {
-          await supabase
-            .from("notifications")
-            .update({ status: "sent", sent_at: new Date().toISOString() })
-            .eq("id", notification.id);
-          
-          results.push({ id: notification.id, success: true });
-        } else {
-          await supabase
-            .from("notifications")
-            .update({ status: "failed", error_message: smsResult.error, sent_at: new Date().toISOString() })
-            .eq("id", notification.id);
-          
-          results.push({ id: notification.id, success: false, error: smsResult.error });
-        }
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : "Unknown error";
-        
-        await supabase
-          .from("notifications")
-          .update({ status: "failed", error_message: errorMessage, sent_at: new Date().toISOString() })
-          .eq("id", notification.id);
-        
-        results.push({ id: notification.id, success: false, error: errorMessage });
-      }
+      const result = await processNotification(supabase, notification, credentials);
+      results.push(result);
     }
 
     // Log successful invocation
